@@ -23,7 +23,7 @@ public record EntityFactory(
                 entity.getComponents().add(comp);
             entity.setLayer(preLayer);
         } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }

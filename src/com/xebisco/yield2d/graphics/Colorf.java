@@ -22,6 +22,10 @@ public class Colorf implements IColorf {
         alpha = ((argb >> 24) & 255) / 255f;
     }
 
+    public Colorf(Colorf color) {
+        this(color.getArgb());
+    }
+
     public static int getIntFrom8BitColor(int red, int green, int blue, int alpha) {
         int a = (alpha << 24) & 0xFF000000;
         int r = (red << 16) & 0x00FF0000;

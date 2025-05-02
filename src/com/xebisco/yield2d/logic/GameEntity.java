@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import com.xebisco.yield2d.Global;
 import com.xebisco.yield2d.math.ITransform2f;
 
-public abstract class GameEntity extends EntityHandler implements ILayerable {
+public class GameEntity extends EntityHandler implements ILayerable {
 
     private short layer;
     private final IEntityProcessor entityProcessor;

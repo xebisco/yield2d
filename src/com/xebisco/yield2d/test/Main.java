@@ -1,0 +1,7 @@
+package com.xebisco.yield2d.test;
+
+class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+}
