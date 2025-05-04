@@ -1,6 +1,8 @@
 package com.xebisco.yield2d.graphics;
 
-public interface IColorf {
+import java.io.Serializable;
+
+public interface IColorf extends Serializable {
     float getRed();
 
     float getGreen();

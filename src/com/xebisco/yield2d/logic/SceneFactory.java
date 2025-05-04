@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import com.xebisco.yield2d.graphics.Colorf;
-import com.xebisco.yield2d.math.ITransform2f;
 import com.xebisco.yield2d.mem.Decoder;
 import com.xebisco.yield2d.mem.EncodedObject;
 

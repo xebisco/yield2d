@@ -4,13 +4,14 @@ import java.util.ArrayList;
 
 import com.xebisco.yield2d.Global;
 import com.xebisco.yield2d.math.ITransform2f;
+import com.xebisco.yield2d.math.Transform2f;
 
 public class GameEntity extends EntityHandler implements ILayerable {
 
     private short layer;
     private final IEntityProcessor entityProcessor;
     private final ArrayList<GameComponent> components = new ArrayList<>();
-    private ITransform2f transform;
+    private ITransform2f transform = new Transform2f();
 
     public GameEntity(IEntityProcessor entityProcessor) {
         this.entityProcessor = entityProcessor;
@@ -18,10 +19,48 @@ public class GameEntity extends EntityHandler implements ILayerable {
 
     @Override
     public void onLoad() {
+        Global.RESET_ENTITY_PROCESSOR.process(this);
         if(entityProcessor != null) {
-            Global.RESET_ENTITY_PROCESSOR.process(this);
             entityProcessor.process(this);
         }
+        Global.parallelFor(components, c -> c.load());
+        super.onLoad();
+    }
+
+    @Override
+    public void onUnload() {
+        Global.parallelFor(components, c -> c.unload());
+        super.onUnload();
+    }
+
+    @Override
+    public void onStart() {
+        Global.parallelFor(components, c -> c.start());
+        super.onStart();
+    }
+
+    @Override
+    public void onFirstUpdate(float deltaTime) {
+        Global.parallelFor(components, c -> c.firstUpdate(deltaTime));
+        super.onFirstUpdate(deltaTime);
+    }
+
+    @Override
+    public void onUpdate(float deltaTime) {
+        Global.parallelFor(components, c -> c.update(deltaTime));
+        super.onUpdate(deltaTime);
+    }
+
+    @Override
+    public void onLastUpdate(float deltaTime) {
+        Global.parallelFor(components, c -> c.lastUpdate(deltaTime));
+        super.onLastUpdate(deltaTime);
+    }
+
+    @Override
+    public void onFixedUpdate(float fixedDeltaTime) {
+        Global.parallelFor(components, c -> c.onFixedUpdate(fixedDeltaTime));
+        super.onFixedUpdate(fixedDeltaTime);
     }
 
     @Override

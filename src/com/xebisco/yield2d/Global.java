@@ -1,5 +1,9 @@
 package com.xebisco.yield2d;
 
+import java.util.List;
+import java.util.function.Consumer;
+
+import com.xebisco.yield2d.async.ParallelFor;
 import com.xebisco.yield2d.graphics.Colorf;
 import com.xebisco.yield2d.graphics.Colors;
 import com.xebisco.yield2d.logic.IEntityProcessor;
@@ -24,6 +28,16 @@ public final class Global {
         s.setBackground(defSceneBkg);
     };
 
+    private static volatile boolean parallelFors = true;
+
+    public static <T> void parallelFor(List<T> list, Consumer<T> consumer) {
+        if(parallelFors) {
+            new ParallelFor(list, consumer).await(0);
+        } else {
+            list.forEach(consumer);
+        }
+    }
+
     public static Colorf getDefSceneBkg() {
         return defSceneBkg;
     }
@@ -47,4 +61,14 @@ public final class Global {
     public static void setDefPaintFrg(Colorf defPaintFrg) {
         Global.defPaintFrg = defPaintFrg;
     }
+
+    public static boolean isParallelFors() {
+        return parallelFors;
+    }
+
+    public static void setParallelFors(boolean parallelFors) {
+        Global.parallelFors = parallelFors;
+    }
+
+    
 }

@@ -8,6 +8,12 @@ public interface IBasicLogic extends ILoadable {
     }
     void onStart();
 
+    default void firstUpdate(float deltaTime) {
+        onFirstUpdate(deltaTime);
+    }
+
+    void onFirstUpdate(float deltaTime);
+
     default void update(float deltaTime) {
         onUpdate(deltaTime);
     }

@@ -1,17 +1,25 @@
 package com.xebisco.yield2d.logic;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
+import com.xebisco.yield2d.Global;
 import com.xebisco.yield2d.graphics.Colorf;
-import com.xebisco.yield2d.mem.EncodedObject;
 
-public final class Scene extends BasicLogic implements Serializable {
-    private final ArrayList<GameEntity> entities = new ArrayList<>();
+public final class Scene extends EntityHandler implements Serializable {
     private Colorf background;
+    private final ISceneProcessor sceneProcessor;
 
-    public ArrayList<GameEntity> getEntities() {
-        return entities;
+    public Scene(ISceneProcessor sceneProcessor) {
+        this.sceneProcessor = sceneProcessor;
+    }
+
+    @Override
+    public void onLoad() {
+        Global.RESET_SCENE_PROCESSOR.process(this);
+        if (sceneProcessor != null) {
+            sceneProcessor.process(this);
+        }
+        super.onLoad();
     }
 
     public Colorf getBackground() {

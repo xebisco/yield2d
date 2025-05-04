@@ -1,7 +1,31 @@
 package com.xebisco.yield2d.test;
 
+import com.xebisco.yield2d.async.LoopContext;
+import com.xebisco.yield2d.logic.GameComponent;
+import com.xebisco.yield2d.logic.GameEntity;
+import com.xebisco.yield2d.logic.Scene;
+
 class Main {
     public static void main(String[] args) {
-        System.out.println("Hello, World!");
+        Scene scene = new Scene(null);
+
+        scene.getEntities().add(new GameEntity(e -> {
+            e.getComponents().add(new GameComponent() {
+                @Override
+                public void onStart() {
+                    System.out.println("starty");
+                }
+                @Override
+                public void onUpdate(float deltaTime) {
+                    System.out.println((1f / deltaTime) + " FPS");
+                }
+            });
+        }));
+
+        scene.load();
+        LoopContext c = new LoopContext("null", scene);
+        c.setTargetSleepTime(33_333_333);
+        c.run();
+        scene.unload();
     }
 }
