@@ -3,6 +3,7 @@ package com.xebisco.yield2d.logic;
 import java.util.ArrayList;
 
 import com.xebisco.yield2d.Global;
+import com.xebisco.yield2d.logic.proc.IEntityProcessor;
 import com.xebisco.yield2d.math.ITransform2f;
 import com.xebisco.yield2d.math.Transform2f;
 

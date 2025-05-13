@@ -1,9 +1,11 @@
-package com.xebisco.yield2d.logic;
+package com.xebisco.yield2d.logic.proc;
 
 import java.io.IOException;
 import java.io.Serializable;
 
 import com.xebisco.yield2d.graphics.Colorf;
+import com.xebisco.yield2d.logic.GameEntity;
+import com.xebisco.yield2d.logic.Scene;
 import com.xebisco.yield2d.mem.Decoder;
 import com.xebisco.yield2d.mem.EncodedObject;
 

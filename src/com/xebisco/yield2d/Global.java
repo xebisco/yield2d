@@ -6,8 +6,8 @@ import java.util.function.Consumer;
 import com.xebisco.yield2d.async.ParallelFor;
 import com.xebisco.yield2d.graphics.Colorf;
 import com.xebisco.yield2d.graphics.Colors;
-import com.xebisco.yield2d.logic.IEntityProcessor;
-import com.xebisco.yield2d.logic.ISceneProcessor;
+import com.xebisco.yield2d.logic.proc.IEntityProcessor;
+import com.xebisco.yield2d.logic.proc.ISceneProcessor;
 
 public final class Global {
     private Global() {

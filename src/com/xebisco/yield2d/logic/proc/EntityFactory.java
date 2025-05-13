@@ -1,8 +1,10 @@
-package com.xebisco.yield2d.logic;
+package com.xebisco.yield2d.logic.proc;
 
 import java.io.IOException;
 import java.io.Serializable;
 
+import com.xebisco.yield2d.logic.GameComponent;
+import com.xebisco.yield2d.logic.GameEntity;
 import com.xebisco.yield2d.math.ITransform2f;
 import com.xebisco.yield2d.mem.Decoder;
 import com.xebisco.yield2d.mem.EncodedObject;
