@@ -5,7 +5,7 @@ import java.io.Serializable;
 import com.xebisco.yield2d.Global;
 import com.xebisco.yield2d.graphics.Colorf;
 
-public final class Scene extends EntityHandler implements Serializable {
+public class Scene extends EntityHandler implements Serializable {
     private Colorf background;
     private final ISceneProcessor sceneProcessor;
 

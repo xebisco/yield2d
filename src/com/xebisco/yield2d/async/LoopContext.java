@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.xebisco.yield2d.logic.IBasicLogic;
+import com.xebisco.yield2d.logic.ILogic;
 
 public class LoopContext implements Runnable {
 
@@ -12,7 +12,7 @@ public class LoopContext implements Runnable {
     private final AtomicBoolean running = new AtomicBoolean(), paused = new AtomicBoolean();
     private final Object pauseLock = new Object();
     private final List<Runnable> shutdownHooks = new ArrayList<>();
-    private final IBasicLogic basicLogic;
+    private final ILogic logic;
     private long timeSinceStart, targetSleepTime = 16_666_667;
     private float deltaTime;
 
@@ -21,9 +21,9 @@ public class LoopContext implements Runnable {
      *
      * @param name The name of the thread.
      */
-    public LoopContext(String name, IBasicLogic basicLogic) {
+    public LoopContext(String name, ILogic logic) {
         thread = new Thread(this, "Yield LoopContext: " + name);
-        this.basicLogic = basicLogic;
+        this.logic = logic;
     }
 
     @Override
@@ -31,7 +31,7 @@ public class LoopContext implements Runnable {
         running.set(true);
         long last = System.nanoTime(), actual;
         long value = 0;
-        basicLogic.start();
+        logic.start();
         setTimeSinceStart(last);
         while (running.get()) {
             if (value > 0) {
@@ -55,9 +55,9 @@ public class LoopContext implements Runnable {
 
             setDeltaTime((actual - last) / 1_000_000_000f);
 
-            basicLogic.firstUpdate(getDeltaTime());
-            basicLogic.update(getDeltaTime());
-            basicLogic.lastUpdate(getDeltaTime());
+            logic.firstUpdate(getDeltaTime());
+            logic.update(getDeltaTime());
+            logic.lastUpdate(getDeltaTime());
 
             last = actual;
             actual = System.nanoTime();
@@ -112,8 +112,8 @@ public class LoopContext implements Runnable {
         return shutdownHooks;
     }
 
-    public IBasicLogic getBasicLogic() {
-        return basicLogic;
+    public ILogic getLogic() {
+        return logic;
     }
 
     public long getTimeSinceStart() {

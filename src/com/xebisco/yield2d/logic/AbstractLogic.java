@@ -1,6 +1,6 @@
 package com.xebisco.yield2d.logic;
 
-public abstract class BasicLogic implements IBasicLogic {
+public abstract class AbstractLogic implements ILogic {
     private boolean loaded, loading, unloading;
     private int frames;
 
@@ -8,10 +8,8 @@ public abstract class BasicLogic implements IBasicLogic {
     public void load() {
         setLoaded(false);
         setLoading(true);
-
         setFrames(0);
-
-        IBasicLogic.super.load();
+        ILogic.super.load();
         setLoaded(true);
         setLoading(false);
     }
@@ -19,14 +17,14 @@ public abstract class BasicLogic implements IBasicLogic {
     @Override
     public void unload() {
         setUnloading(true);
-        IBasicLogic.super.unload();
+        ILogic.super.unload();
         setLoaded(false);
         setUnloading(false);
     }
 
     @Override
     public void update(float deltaTime) {
-        IBasicLogic.super.update(deltaTime);
+        ILogic.super.update(deltaTime);
         setFrames(getFrames() + 1);
     }
 

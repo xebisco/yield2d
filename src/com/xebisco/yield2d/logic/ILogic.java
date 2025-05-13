@@ -2,7 +2,7 @@ package com.xebisco.yield2d.logic;
 
 import com.xebisco.yield2d.mem.ILoadable;
 
-public interface IBasicLogic extends ILoadable {
+public interface ILogic extends ILoadable {
     default void start() {
         onStart();
     }

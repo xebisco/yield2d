@@ -63,6 +63,43 @@ public class GameEntity extends EntityHandler implements ILayerable {
         super.onFixedUpdate(fixedDeltaTime);
     }
 
+    public <T extends GameComponent> T[] getComponents(Class<T> componentsType) {
+        ArrayList<T> result = new ArrayList<>();
+        T act = null, comp;
+        
+        int i = 0;
+        do {
+            comp = act;
+            act = getComponent(componentsType, i++);
+            if(act != null) result.add(act);
+        } while(act != comp);
+
+        return (T[]) result.toArray();
+    }
+
+    public <T extends GameComponent> boolean contains(Class<T> componentType) {
+        return getComponent(componentType) != null;
+    }
+
+    public <T extends GameComponent> T getComponent(Class<T> componentType) {
+        return getComponent(componentType, 0);
+    }
+
+    public <T extends GameComponent> T getComponent(Class<T> componentType, int index) {
+        T result = null;
+
+        int i = 0;
+        for(GameComponent c : getComponents()) {
+            if(componentType.isInstance(c)) {
+                result = (T) c;
+                if(index == i) break;
+                i++;
+            }
+        }
+
+        return result;
+    }
+
     @Override
     public short getLayer() {
         return layer;

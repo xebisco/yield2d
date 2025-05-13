@@ -1,7 +1,6 @@
 package com.xebisco.yield2d.logic;
 
-public abstract class GameComponent extends BasicLogic {
-
+public abstract class GameComponent extends AbstractLogic {
     @Override
     public final void start() {
         super.start();

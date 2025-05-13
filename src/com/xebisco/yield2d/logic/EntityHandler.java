@@ -5,7 +5,7 @@ import java.util.Comparator;
 
 import com.xebisco.yield2d.Global;
 
-public abstract class EntityHandler extends BasicLogic {
+public abstract class EntityHandler extends AbstractLogic {
     private final ArrayList<GameEntity> entities = new ArrayList<>();
 
     @Override
