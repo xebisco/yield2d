@@ -91,6 +91,7 @@ public class GameEntity extends EntityHandler implements IIndexable {
         component.setEntity(this);
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends GameComponent> T[] getComponents(Class<T> componentsType) {
         ArrayList<T> result = new ArrayList<>();
         T act = null, comp;
@@ -114,6 +115,7 @@ public class GameEntity extends EntityHandler implements IIndexable {
         return getComponent(componentType, 0);
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends GameComponent> T getComponent(Class<T> componentType, int index) {
         T result = null;
 
