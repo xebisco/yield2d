@@ -6,42 +6,78 @@ import java.util.Comparator;
 import com.xebisco.yield2d.Global;
 
 public abstract class EntityHandler extends AbstractLogic {
-    private final ArrayList<GameEntity> entities = new ArrayList<>();
+    private final ArrayList<GameEntity> entities = new ArrayList<>(), toRemoveEntities = new ArrayList<>();
 
     @Override
     public void onLoad() {
-        Global.parallelFor(entities, e -> e.load());
+        Global.parallelFor(entities, e -> {
+            updateHandlerOnEntity(e);
+            e.load();
+        });
     }
 
     @Override
     public void onUnload() {
-        Global.parallelFor(entities, e -> e.unload());
+        Global.parallelFor(entities, e -> {
+            updateHandlerOnEntity(e);
+            e.unload();
+        });
     }
 
     @Override
     public void onStart() {
-        entities.forEach(e -> e.start());
+        Global.parallelFor(entities, e -> {
+            updateHandlerOnEntity(e);
+            e.start();
+        });
     }
 
     @Override
     public void onFirstUpdate(float deltaTime) {
         entities.sort(Comparator.naturalOrder());
-        entities.forEach(e -> e.firstUpdate(deltaTime));
+        Global.parallelFor(entities, e -> {
+            updateHandlerOnEntity(e);
+            e.firstUpdate(deltaTime);
+        });
     }
 
     @Override
     public void onUpdate(float deltaTime) {
-        entities.forEach(e -> e.update(deltaTime));
+        Global.parallelFor(entities, e -> {
+            updateHandlerOnEntity(e);
+            e.update(deltaTime);
+        });
     }
 
     @Override
     public void onLastUpdate(float deltaTime) {
-        entities.forEach(e -> e.lastUpdate(deltaTime));
+        Global.parallelFor(entities, e -> {
+            updateHandlerOnEntity(e);
+            e.lastUpdate(deltaTime);
+        });
+
+        entities.removeAll(toRemoveEntities);
+        toRemoveEntities.clear();
     }
 
     @Override
     public void onFixedUpdate(float fixedDeltaTime) {
-        entities.forEach(e -> e.fixedUpdate(fixedDeltaTime));
+        Global.parallelFor(entities, e -> {
+            updateHandlerOnEntity(e);
+            e.fixedUpdate(fixedDeltaTime);
+        });
+    }
+
+    public void removeEntity(GameEntity e) {
+        toRemoveEntities.add(e);
+    }
+
+    public void removeEntity(int index) {
+        removeEntity(getEntities().get(index));
+    }
+
+    public void updateHandlerOnEntity(GameEntity entity) {
+        entity.setHandler(this);
     }
 
     public ArrayList<GameEntity> getEntities() {

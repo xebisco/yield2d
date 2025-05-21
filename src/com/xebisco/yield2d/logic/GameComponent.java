@@ -1,6 +1,9 @@
 package com.xebisco.yield2d.logic;
 
 public abstract class GameComponent extends AbstractLogic {
+
+    private GameEntity entity;
+
     @Override
     public final void start() {
         super.start();
@@ -69,5 +72,17 @@ public abstract class GameComponent extends AbstractLogic {
     @Override
     public void onFixedUpdate(float fixedDeltaTime) {
         
+    }
+
+    public final Scene getScene() {
+        return getEntity().getScene();
+    }
+    
+    public final GameEntity getEntity() {
+        return entity;
+    }
+
+    void setEntity(GameEntity entity) {
+        this.entity = entity;
     }
 }
