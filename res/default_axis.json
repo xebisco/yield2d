@@ -1,0 +1,17 @@
+{
+  "HORIZONTAL": {
+    "positive": "KB_RIGHT",
+    "altPositive": "KB_D",
+    "negative": "KB_LEFT",
+    "altNegative": "KB_A"
+  },
+  "VERTICAL": {
+    "positive": "KB_UP",
+    "altPositive": "KB_W",
+    "negative": "KB_DOWN",
+    "altNegative": "KB_S"
+  },
+  "JUMP": {
+    "positive": "KB_SPACE"
+  }
+}
