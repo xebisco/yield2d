@@ -10,7 +10,7 @@ public class ParticleEmitterScript extends Script {
 
         @Editable
         @CantBeNull
-        private float emissionRatePerSecond = 4f, emissionRateNoise = 0f;
+        private float emissionRatePerSecond = 8f, emissionRateNoise = 0f;
 
         public Vector2f getPoint() {
             return point;
@@ -57,7 +57,7 @@ public class ParticleEmitterScript extends Script {
         private SimulationOptions simulationOpt = SimulationOptions.INTERNAL;
 
         @Editable
-        private TextureFile textureFile = new TextureFile("maxixe.jpg");
+        private TextureFile textureFile = new TextureFile("default_particle.png");
 
         public SimulationOptions getSimulationOpt() {
             return simulationOpt;
@@ -83,15 +83,15 @@ public class ParticleEmitterScript extends Script {
 
         @Editable
         @CantBeNull
-        private Color startColor = new Color(Colors.TRANSPARENT), endColor = new Color(Colors.WHITE);
+        private Color startColor = new Color(Colors.WHITE), endColor = new Color(Colors.WHITE);
 
         @Editable
         @CantBeNull
-        private Vector2f startSpeed = new Vector2f(80f, 0), startSpeedNoise = new Vector2f(), speedNoise = new Vector2f(20, 20), size = new Vector2f(140, 100), sizeNoise = new Vector2f();
+        private Vector2f startSpeed = new Vector2f(80f, 0), startSpeedNoise = new Vector2f(), speedNoise = new Vector2f(), size = new Vector2f(100, 100), sizeNoise = new Vector2f();
 
         @Editable
         @CantBeNull
-        private boolean invertColorTransition = true;
+        private boolean invertColorTransition = false;
 
         public float getMaxLifeSeconds() {
             return maxLifeSeconds;
@@ -237,8 +237,9 @@ public class ParticleEmitterScript extends Script {
 
     @Override
     public void update(TimeSpan elapsed) {
-        if(timeToCreateParticle >= 1f / emissionRate()) {
-            timeToCreateParticle = 0;
+        float er = 1f / emissionRate();
+        while (timeToCreateParticle >= 1f / emissionRate()) {
+            timeToCreateParticle -= er;
             createNewParticle();
         }
         timeToCreateParticle += elapsed.getSeconds();

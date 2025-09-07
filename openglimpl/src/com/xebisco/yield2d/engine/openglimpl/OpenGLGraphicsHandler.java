@@ -680,7 +680,7 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
         if (windowProperties.isCreateWindow()) {
             frame = new JFrame();
             frame.setIgnoreRepaint(true);
-            if(windowProperties.isWindowIcon()) {
+            if (windowProperties.isWindowIcon()) {
                 InputStream iconIs = getApplication().getFileHandler().openInputStream("icon.png");
                 try {
                     frame.setIconImage(ImageIO.read(iconIs));
@@ -729,8 +729,9 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
 
     @Override
     public void update(TimeSpan elapsed) {
-        if (canvas.isDisplayable())
+        if (canvas.isDisplayable()) {
             canvas.render();
+        }
     }
 
     @Override
@@ -756,7 +757,7 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
         }
         getApplication().getFileHandler().closeInputStream(inputStream);
 
-        for(TextureAtlasFile.Clip clip : info.clipMap().values()) {
+        for (TextureAtlasFile.Clip clip : info.clipMap().values()) {
             TextureFile texture = new TextureFile("", info.filter());
             textureCache.put(texture, new OpenGLTexture(image.getSubimage(clip.getX(), clip.getY(), clip.getWidth(), clip.getHeight()), info.filter()));
             clip.setTexture(texture);

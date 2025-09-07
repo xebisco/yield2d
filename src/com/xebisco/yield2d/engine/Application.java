@@ -15,7 +15,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class Application extends HandlerCollection {
 
     public enum Type {
-        GAME(new Class[]{PhysicsHandler.class});
+        GAME(new Class[]{PhysicsHandler.class}),
+        EMPTY(new Class[]{});
         private final Class<? extends Handler>[] defaultHandlers;
 
 
