@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Class-Path: lwjgl.jar lwjgl-openal.jar lwjgl-javadoc.jar lwjgl-sources.j
+ ar lwjgl-natives-linux.jar lwjgl-natives-macos.jar lwjgl-openal-javadoc
+ .jar lwjgl-openal-sources.jar lwjgl-natives-windows.jar lwjgl-natives-m
+ acos-arm64.jar lwjgl-openal-natives-linux.jar lwjgl-openal-natives-maco
+ s.jar lwjgl-natives-windows-arm64.jar lwjgl-openal-natives-windows.jar 
+ lwjgl-openal-natives-macos-arm64.jar lwjgl-openal-natives-windows-arm64
+ .jar gson-2.13.1.jar
+

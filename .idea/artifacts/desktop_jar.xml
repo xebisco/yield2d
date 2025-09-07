@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact name="desktop:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/desktop_jar</output-path>
+    <root id="root">
+      <element id="archive" name="yield_desktop.jar">
+        <element id="module-output" name="desktop" />
+        <element id="module-output" name="engine" />
+      </element>
+    </root>
+  </artifact>
+</component>

@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact name="openglimpl:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/openglimpl_jar</output-path>
+    <root id="root">
+      <element id="archive" name="yield_openglimpl.jar">
+        <element id="module-output" name="openglimpl" />
+        <element id="module-output" name="engine" />
+      </element>
+      <element id="library" level="project" name="opengl-libs" />
+    </root>
+  </artifact>
+</component>

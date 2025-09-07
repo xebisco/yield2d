@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact name="openalimpl:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/openalimpl_jar</output-path>
+    <root id="root">
+      <element id="archive" name="yield_openalimpl.jar">
+        <element id="module-output" name="openalimpl" />
+        <element id="module-output" name="engine" />
+      </element>
+      <element id="library" level="project" name="openal-libs" />
+    </root>
+  </artifact>
+</component>

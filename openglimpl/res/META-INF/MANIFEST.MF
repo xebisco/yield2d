@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Class-Path: lwjgl.jar lwjgl-jawt.jar joml-1.10.8.jar lwjgl-opengl.jar lw
+ jgl-javadoc.jar lwjgl-sources.jar lwjgl3-awt-0.1.8.jar lwjgl-jawt-javad
+ oc.jar lwjgl-jawt-sources.jar joml-1.10.8-javadoc.jar joml-1.10.8-sourc
+ es.jar lwjgl-natives-linux.jar lwjgl-natives-macos.jar lwjgl-opengl-jav
+ adoc.jar lwjgl-opengl-sources.jar lwjgl-natives-windows.jar lwjgl3-awt-
+ 0.1.8-javadoc.jar lwjgl3-awt-0.1.8-sources.jar lwjgl-natives-macos-arm6
+ 4.jar lwjgl-opengl-natives-linux.jar lwjgl-opengl-natives-macos.jar lwj
+ gl-natives-windows-arm64.jar lwjgl-opengl-natives-windows.jar lwjgl-ope
+ ngl-natives-macos-arm64.jar lwjgl-opengl-natives-windows-arm64.jar gson
+ -2.13.1.jar
+
