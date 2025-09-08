@@ -43,40 +43,45 @@ public class AudioPlayerScript extends Script {
         return audioFile;
     }
 
-    public void setAudioFile(AudioFile audioFile) {
+    public AudioPlayerScript setAudioFile(AudioFile audioFile) {
         stop();
         this.audioFile = audioFile;
-    }
-
-    public boolean isPlayOnInit() {
-        return playOnInit;
-    }
-
-    public void setPlayOnInit(boolean playOnInit) {
-        this.playOnInit = playOnInit;
-    }
-
-    public boolean isLoop() {
-        return loop;
-    }
-
-    public void setLoop(boolean loop) {
-        this.loop = loop;
+        return this;
     }
 
     public double getGain() {
         return gain;
     }
 
-    public void setGain(float gain) {
+    public AudioPlayerScript setGain(double gain) {
         this.gain = gain;
+        return this;
     }
 
     public double getPan() {
         return pan;
     }
 
-    public void setPan(float pan) {
+    public AudioPlayerScript setPan(double pan) {
         this.pan = pan;
+        return this;
+    }
+
+    public boolean isPlayOnInit() {
+        return playOnInit;
+    }
+
+    public AudioPlayerScript setPlayOnInit(boolean playOnInit) {
+        this.playOnInit = playOnInit;
+        return this;
+    }
+
+    public boolean isLoop() {
+        return loop;
+    }
+
+    public AudioPlayerScript setLoop(boolean loop) {
+        this.loop = loop;
+        return this;
     }
 }

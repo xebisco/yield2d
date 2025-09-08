@@ -1,9 +1,8 @@
 package com.xebisco.yield2d.engine;
 
-public class ParticleBehaviorScript extends Script {
+class ParticleBehaviorScript extends Script {
 
-    private final ParticleEmitterScript.LifetimeInfo lifetimeInfo;
-    private final ParticleEmitterScript.ContainerInfo containerInfo;
+    private final ParticleEmitterScript emitter;
 
     private final Vector2f gravity = new Vector2f(0, -10), velocity = new Vector2f();
 
@@ -11,40 +10,39 @@ public class ParticleBehaviorScript extends Script {
 
     private float remainingLife;
 
-    public ParticleBehaviorScript(ParticleEmitterScript.LifetimeInfo lifetimeInfo, ParticleEmitterScript.ContainerInfo containerInfo) {
-        this.lifetimeInfo = lifetimeInfo;
-        this.containerInfo = containerInfo;
+    ParticleBehaviorScript(ParticleEmitterScript emitter) {
+        this.emitter = emitter;
     }
 
     private Vector2f startSpeed() {
         return new Vector2f(
-                lifetimeInfo.getStartSpeed().getX() + Utils.randomFloat(-lifetimeInfo.getStartSpeedNoise().getX(), lifetimeInfo.getStartSpeedNoise().getX()),
-                lifetimeInfo.getStartSpeed().getY() + Utils.randomFloat(-lifetimeInfo.getStartSpeedNoise().getY(), lifetimeInfo.getStartSpeedNoise().getY())
+                emitter.getStartSpeed().getX() + Utils.randomFloat(-emitter.getStartSpeedNoise().getX(), emitter.getStartSpeedNoise().getX()),
+                emitter.getStartSpeed().getY() + Utils.randomFloat(-emitter.getStartSpeedNoise().getY(), emitter.getStartSpeedNoise().getY())
         );
     }
 
     private Vector2f size() {
         return new Vector2f(
-                lifetimeInfo.getSize().getX() + Utils.randomFloat(-lifetimeInfo.getSizeNoise().getX(), lifetimeInfo.getSizeNoise().getX()),
-                lifetimeInfo.getSize().getY() + Utils.randomFloat(-lifetimeInfo.getSizeNoise().getY(), lifetimeInfo.getSizeNoise().getY())
+                emitter.getSize().getX() + Utils.randomFloat(-emitter.getSizeNoise().getX(), emitter.getSizeNoise().getX()),
+                emitter.getSize().getY() + Utils.randomFloat(-emitter.getSizeNoise().getY(), emitter.getSizeNoise().getY())
         );
     }
 
     private float direction() {
-        return lifetimeInfo.getDirection() + Utils.randomFloat(-lifetimeInfo.getDirectionNoise(), lifetimeInfo.getDirectionNoise());
+        return emitter.getDirection() + Utils.randomFloat(-emitter.getDirectionNoise(), emitter.getDirectionNoise());
     }
 
     private float rotation() {
-        return lifetimeInfo.getRotation() + Utils.randomFloat(-lifetimeInfo.getRotationNoise(), lifetimeInfo.getRotationNoise());
+        return emitter.getRotation() + Utils.randomFloat(-emitter.getRotationNoise(), emitter.getRotationNoise());
     }
 
     @Override
     public void init() {
-        remainingLife = lifetimeInfo.getMaxLifeSeconds();
+        remainingLife = emitter.getMaxLifeSeconds();
         md = getScript(MeshDrawerScript.class);
-        md.setTextureFile(containerInfo.getTextureFile());
+        md.setTextureFile(emitter.getTextureFile());
         md.setExtraScale(size());
-        gravity.multiplyLocal(lifetimeInfo.getGravityMultiplier());
+        gravity.multiplyLocal(emitter.getGravityMultiplier());
         velocity.addLocal(startSpeed().rotate((float) Math.toDegrees(direction())));
         getTransform().rotate(rotation());
     }
@@ -52,24 +50,54 @@ public class ParticleBehaviorScript extends Script {
     @Override
     public void update(TimeSpan elapsed) {
         remainingLife -= elapsed.getSeconds();
-        float r = TweeningInfo.Easing.LINEAR.call(null, lifetimeInfo.getMaxLifeSeconds() - remainingLife, lifetimeInfo.getStartColor().getRed(), lifetimeInfo.getEndColor().getRed(), lifetimeInfo.getMaxLifeSeconds());
-        float g = TweeningInfo.Easing.LINEAR.call(null, lifetimeInfo.getMaxLifeSeconds() - remainingLife, lifetimeInfo.getStartColor().getGreen(), lifetimeInfo.getEndColor().getGreen(), lifetimeInfo.getMaxLifeSeconds());
-        float b = TweeningInfo.Easing.LINEAR.call(null, lifetimeInfo.getMaxLifeSeconds() - remainingLife, lifetimeInfo.getStartColor().getBlue(), lifetimeInfo.getEndColor().getBlue(), lifetimeInfo.getMaxLifeSeconds());
-        float a = TweeningInfo.Easing.LINEAR.call(null, lifetimeInfo.getMaxLifeSeconds() - remainingLife, lifetimeInfo.getStartColor().getAlpha(), lifetimeInfo.getEndColor().getAlpha(), lifetimeInfo.getMaxLifeSeconds());
+        float r = TweeningInfo.Easing.LINEAR.call(null, emitter.getMaxLifeSeconds() - remainingLife, emitter.getStartColor().getRed(), emitter.getEndColor().getRed(), emitter.getMaxLifeSeconds());
+        float g = TweeningInfo.Easing.LINEAR.call(null, emitter.getMaxLifeSeconds() - remainingLife, emitter.getStartColor().getGreen(), emitter.getEndColor().getGreen(), emitter.getMaxLifeSeconds());
+        float b = TweeningInfo.Easing.LINEAR.call(null, emitter.getMaxLifeSeconds() - remainingLife, emitter.getStartColor().getBlue(), emitter.getEndColor().getBlue(), emitter.getMaxLifeSeconds());
+        float a = TweeningInfo.Easing.LINEAR.call(null, emitter.getMaxLifeSeconds() - remainingLife, emitter.getStartColor().getAlpha(), emitter.getEndColor().getAlpha(), emitter.getMaxLifeSeconds());
         md.setColor(new Color(
-                lifetimeInfo.isInvertColorTransition() ? 1 - r : r,
-                lifetimeInfo.isInvertColorTransition() ? 1 - g : g,
-                lifetimeInfo.isInvertColorTransition() ? 1 - b : b,
-                lifetimeInfo.isInvertColorTransition() ? 1 - a : a
+                emitter.isInvertColorTransition() ? 1 - r : r,
+                emitter.isInvertColorTransition() ? 1 - g : g,
+                emitter.isInvertColorTransition() ? 1 - b : b,
+                emitter.isInvertColorTransition() ? 1 - a : a
         ));
         if (remainingLife <= 0) {
             getContainer().destroy();
         }
         velocity.addLocal(gravity);
         velocity.addLocal(new Vector2f(
-                Utils.randomFloat(-lifetimeInfo.getSpeedNoise().getX(), lifetimeInfo.getSpeedNoise().getX()),
-                Utils.randomFloat(-lifetimeInfo.getSpeedNoise().getY(), lifetimeInfo.getSpeedNoise().getY())
+                Utils.randomFloat(-emitter.getSpeedNoise().getX(), emitter.getSpeedNoise().getX()),
+                Utils.randomFloat(-emitter.getSpeedNoise().getY(), emitter.getSpeedNoise().getY())
         ));
         getTransform().translate(velocity.multiply(elapsed.getSeconds()));
+    }
+
+    public ParticleEmitterScript getEmitter() {
+        return emitter;
+    }
+
+    public Vector2f getGravity() {
+        return gravity;
+    }
+
+    public Vector2f getVelocity() {
+        return velocity;
+    }
+
+    public MeshDrawerScript getMd() {
+        return md;
+    }
+
+    public ParticleBehaviorScript setMd(MeshDrawerScript md) {
+        this.md = md;
+        return this;
+    }
+
+    public float getRemainingLife() {
+        return remainingLife;
+    }
+
+    public ParticleBehaviorScript setRemainingLife(float remainingLife) {
+        this.remainingLife = remainingLife;
+        return this;
     }
 }

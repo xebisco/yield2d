@@ -95,4 +95,31 @@ public class TweenerScript extends Script {
             mod.getVariableField().set(mod.getScriptObject(), value.byteValue());
         } else throw new IllegalArgumentException(mod.getVariableField().getType() + " is not supported.");
     }
+
+    public TweeningInfo getInfo() {
+        return info;
+    }
+
+    public TweenerScript setInfo(TweeningInfo info) {
+        this.info = info;
+        return this;
+    }
+
+    public float getTime() {
+        return time;
+    }
+
+    public TweenerScript setTime(float time) {
+        this.time = time;
+        return this;
+    }
+
+    public Map<TweeningInfo.TweeningPoint, PointMod> getScriptObjectsMap() {
+        return scriptObjectsMap;
+    }
+
+    public TweenerScript setScriptObjectsMap(Map<TweeningInfo.TweeningPoint, PointMod> scriptObjectsMap) {
+        this.scriptObjectsMap = scriptObjectsMap;
+        return this;
+    }
 }

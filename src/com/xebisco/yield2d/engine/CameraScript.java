@@ -8,7 +8,8 @@ public class CameraScript extends Script {
         return background;
     }
 
-    public void setBackground(Color background) {
+    public CameraScript setBackground(Color background) {
         this.background = background;
+        return this;
     }
 }

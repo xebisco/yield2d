@@ -66,43 +66,48 @@ public class MeshDrawerScript extends Script implements Drawer {
         else graphics.drawMesh(mesh, textureFile, color);
     }
 
-    public Mesh2f getMesh() {
-        return mesh;
+    public Vector2f getExtraScale() {
+        return extraScale;
     }
 
-    public void setMesh(Mesh2f mesh) {
-        this.mesh = mesh;
+    public MeshDrawerScript setExtraScale(Vector2f extraScale) {
+        this.extraScale = extraScale;
+        return this;
     }
 
     public Color getColor() {
         return color;
     }
 
-    public void setColor(Color color) {
+    public MeshDrawerScript setColor(Color color) {
         this.color = color;
-    }
-
-    public TextureFile getTextureFile() {
-        return textureFile;
-    }
-
-    public void setTextureFile(TextureFile textureFile) {
-        this.textureFile = textureFile;
-    }
-
-    public Vector2f getExtraScale() {
-        return extraScale;
-    }
-
-    public void setExtraScale(Vector2f extraScale) {
-        this.extraScale = extraScale;
+        return this;
     }
 
     public boolean isScaleToTextureSize() {
         return scaleToTextureSize;
     }
 
-    public void setScaleToTextureSize(boolean scaleToTextureSize) {
+    public MeshDrawerScript setScaleToTextureSize(boolean scaleToTextureSize) {
         this.scaleToTextureSize = scaleToTextureSize;
+        return this;
+    }
+
+    public TextureFile getTextureFile() {
+        return textureFile;
+    }
+
+    public MeshDrawerScript setTextureFile(TextureFile textureFile) {
+        this.textureFile = textureFile;
+        return this;
+    }
+
+    public Mesh2f getMesh() {
+        return mesh;
+    }
+
+    public MeshDrawerScript setMesh(Mesh2f mesh) {
+        this.mesh = mesh;
+        return this;
     }
 }

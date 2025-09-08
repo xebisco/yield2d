@@ -35,7 +35,7 @@ public class TestMain {
         @Override
         public void update(TimeSpan elapsed) {
             Vector2f p = getAxisValue2f("HORIZONTAL", "VERTICAL").multiply(500 * elapsed.getSeconds());
-            getScript(ParticleEmitterScript.class, 0).getEmissionInfo().getPoint().addLocal(p);
+            getScript(ParticleEmitterScript.class, 0).getPoint().addLocal(p);
         }
     }
 }
