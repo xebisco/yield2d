@@ -43,6 +43,7 @@ public class MeshDrawerScript extends Script implements Drawer {
     private Vector2f extraScale = new Vector2f(1f, 1f);
 
     public MeshDrawerScript() {
+        this(DefaultMeshes.RECTANGLE.getValue());
     }
 
     public MeshDrawerScript(Mesh2f mesh) {
