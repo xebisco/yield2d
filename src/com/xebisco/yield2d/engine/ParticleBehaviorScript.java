@@ -48,26 +48,42 @@ class ParticleBehaviorScript extends Script {
 
     @Override
     public void update(TimeSpan elapsed) {
+        if (emitter.getContainer().getFrames() < 10)
+            updatePart(elapsed, 0);
+        else
+            updatePart(elapsed, 1);
+    }
+
+    public void updatePart(TimeSpan elapsed, float randSpeedMult) {
         remainingLife -= elapsed.getSeconds();
+        if (remainingLife <= 0) {
+            getContainer().destroy();
+            return;
+        }
+        /*
         float l = 1 - remainingLife / emitter.getMaxLifeSeconds();
         float r = emitter.getStartColor().getRed() + ((-emitter.getStartColor().getRed() + emitter.getEndColor().getRed())) * l;
         float g = emitter.getStartColor().getGreen() + ((-emitter.getStartColor().getGreen() + emitter.getEndColor().getGreen()) * l);
         float b = emitter.getStartColor().getBlue() + ((-emitter.getStartColor().getBlue() + emitter.getEndColor().getBlue()) * l);
         float a = emitter.getStartColor().getAlpha() + ((-emitter.getStartColor().getAlpha() + emitter.getEndColor().getAlpha()) * l);
-        md.setColor(new Color(
-                r,
-                g,
-                b,
-                a
-        ));
-        if (remainingLife <= 0) {
-            getContainer().destroy();
-        }
-        velocity.addLocal(emitter.getGravity());
+        md.setColor(new Color(r,g,b,a));
+        */
+        float l = 1 - remainingLife / emitter.getMaxLifeSeconds();
+        float r = TweeningInfo.Easing.LINEAR.call(null, l, emitter.getStartColor().getRed(), emitter.getEndColor().getRed(), 1);
+        float g = TweeningInfo.Easing.LINEAR.call(null, l, emitter.getStartColor().getGreen(), emitter.getEndColor().getGreen(), 1);
+        float b = TweeningInfo.Easing.LINEAR.call(null, l, emitter.getStartColor().getBlue(), emitter.getEndColor().getBlue(), 1);
+        float a = TweeningInfo.Easing.LINEAR.call(null, l, emitter.getStartColor().getAlpha(), emitter.getEndColor().getAlpha(), 1);
+        md.setColor(new Color(r, g, b, a));
+
+        velocity.addLocal(emitter.getGravity().multiply(elapsed.getSeconds()));
         velocity.addLocal(new Vector2f(
-                Utils.randomFloat(-emitter.getSpeedNoise().getX(), emitter.getSpeedNoise().getX()),
-                Utils.randomFloat(-emitter.getSpeedNoise().getY(), emitter.getSpeedNoise().getY())
-        ));
+                Utils.randomFloat(
+                        -emitter.getSpeedNoise().getX(),
+                        emitter.getSpeedNoise().getX()),
+                Utils.randomFloat(
+                        -emitter.getSpeedNoise().getY(),
+                        emitter.getSpeedNoise().getY()))
+                .multiply(elapsed.getSeconds() * randSpeedMult));
         getTransform().translate(velocity.multiply(elapsed.getSeconds()));
     }
 

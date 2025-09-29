@@ -1,6 +1,7 @@
 package com.xebisco.yield2d.engine;
 
 import java.io.Serializable;
+import java.util.concurrent.CompletableFuture;
 
 public class ParticleEmitterScript extends Script {
 
@@ -11,7 +12,7 @@ public class ParticleEmitterScript extends Script {
 
     @Editable
     @CantBeNull
-    private Vector2f point = new Vector2f(), rectSize = new Vector2f();
+    private Vector2f point = new Vector2f(), pointNoise = new Vector2f(), rectSize = new Vector2f();
 
     @Editable
     @CantBeNull
@@ -55,7 +56,7 @@ public class ParticleEmitterScript extends Script {
 
     @Editable
     @CantBeNull
-    private boolean invertColorTransition = false, instantiateParticlesInParent;
+    private boolean invertColorTransition = false, instantiateParticlesInParent, populate = true;
 
     private float timeToCreateParticle;
 
@@ -63,24 +64,47 @@ public class ParticleEmitterScript extends Script {
         return getEmissionRatePerSecond() + Utils.randomFloat(-getEmissionRateNoise(), getEmissionRateNoise());
     }
 
-    private void createNewParticle() {
+    private Vector2f point() {
+        return new Vector2f(
+                point.getX() + Utils.randomFloat(-pointNoise.getX(), pointNoise.getY()),
+                point.getY() + Utils.randomFloat(-pointNoise.getY(), pointNoise.getY())
+        );
+    }
+
+    private Container createNewParticle() {
         Container part = new Container(new Script[]{
                 new ParticleBehaviorScript(this),
                 new MeshDrawerScript(MeshDrawerScript.DefaultMeshes.RECTANGLE.getValue())
         });
-        part.getTransform().translate(getPoint());
+        part.getTransform().translate(point());
         part.getTransform().translate(new Vector2f(Utils.randomFloat(-getRectSize().getX() / 2, getRectSize().getX() / 2), Utils.randomFloat(-getRectSize().getY() / 2, getRectSize().getY())));
 
         (instantiateParticlesInParent ? getContainer().getParent() : getContainer()).addChild(part);
         if(instantiateParticlesInParent) {
             part.getTransform().translate(getTransform().getPosition());
         }
+        return part;
+    }
+
+    @Override
+    public void init() {
+        timeToCreateParticle = 0;
     }
 
     @Override
     public void update(TimeSpan elapsed) {
+        if(getContainer().getFrames() == 2) {
+            if(populate) {
+                int lasting = (int) (maxLifeSeconds * emissionRatePerSecond);
+                for(int i = 0; i < lasting; i++) {
+                    Container part = createNewParticle();
+                    part.init();
+                    part.update(new TimeSpan((long) (i / emissionRatePerSecond * 1_000_000_000)));
+                }
+            }
+        }
         float er = 1f / emissionRate();
-        while (timeToCreateParticle >= 1f / emissionRate()) {
+        while (timeToCreateParticle >= er) {
             timeToCreateParticle -= er;
             createNewParticle();
         }
@@ -264,6 +288,24 @@ public class ParticleEmitterScript extends Script {
 
     public ParticleEmitterScript setInstantiateParticlesInParent(boolean instantiateParticlesInParent) {
         this.instantiateParticlesInParent = instantiateParticlesInParent;
+        return this;
+    }
+
+    public boolean isPopulate() {
+        return populate;
+    }
+
+    public ParticleEmitterScript setPopulate(boolean populate) {
+        this.populate = populate;
+        return this;
+    }
+
+    public Vector2f getPointNoise() {
+        return pointNoise;
+    }
+
+    public ParticleEmitterScript setPointNoise(Vector2f pointNoise) {
+        this.pointNoise = pointNoise;
         return this;
     }
 }

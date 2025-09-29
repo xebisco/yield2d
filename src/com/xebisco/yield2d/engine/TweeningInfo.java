@@ -46,7 +46,7 @@ public class TweeningInfo implements Serializable {
 
         public float call(EasingEquations equations, float time, float startingValue, float finalValue, float durationValue) {
             if (equation == null) {
-                return finalValue * time / durationValue + startingValue;
+                return (finalValue - startingValue) * (time / durationValue) + startingValue;
             }
             try {
                 return (float) equation.invoke(equations, time, startingValue, finalValue, durationValue);
