@@ -3,6 +3,7 @@ package com.xebisco.yield2d.engine;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.reflect.TypeToken;
+import com.xebisco.yield2d.engine.physics.PhysicsHandler;
 
 import java.io.IOException;
 import java.io.InputStream;

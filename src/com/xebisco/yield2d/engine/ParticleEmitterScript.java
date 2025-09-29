@@ -43,7 +43,7 @@ public class ParticleEmitterScript extends Script {
 
     @Editable
     @CantBeNull
-    private float maxLifeSeconds = 3f, gravityMultiplier = 0f, direction, directionNoise = 180, rotation, rotationNoise = 180;
+    private float maxLifeSeconds = 3f, direction, directionNoise = 180, rotation, rotationNoise = 180;
 
     @Editable
     @CantBeNull
@@ -51,11 +51,11 @@ public class ParticleEmitterScript extends Script {
 
     @Editable
     @CantBeNull
-    private Vector2f startSpeed = new Vector2f(80f, 0), startSpeedNoise = new Vector2f(), speedNoise = new Vector2f(), size = new Vector2f(100, 100), sizeNoise = new Vector2f();
+    private Vector2f gravity = new Vector2f(0, -10), startSpeed = new Vector2f(80f, 0), startSpeedNoise = new Vector2f(), speedNoise = new Vector2f(), size = new Vector2f(100, 100), sizeNoise = new Vector2f();
 
     @Editable
     @CantBeNull
-    private boolean invertColorTransition = false;
+    private boolean invertColorTransition = false, instantiateParticlesInParent;
 
     private float timeToCreateParticle;
 
@@ -71,7 +71,10 @@ public class ParticleEmitterScript extends Script {
         part.getTransform().translate(getPoint());
         part.getTransform().translate(new Vector2f(Utils.randomFloat(-getRectSize().getX() / 2, getRectSize().getX() / 2), Utils.randomFloat(-getRectSize().getY() / 2, getRectSize().getY())));
 
-        getContainer().getChildren().add(part);
+        (instantiateParticlesInParent ? getContainer().getParent() : getContainer()).addChild(part);
+        if(instantiateParticlesInParent) {
+            part.getTransform().translate(getTransform().getPosition());
+        }
     }
 
     @Override
@@ -129,12 +132,12 @@ public class ParticleEmitterScript extends Script {
         return this;
     }
 
-    public float getGravityMultiplier() {
-        return gravityMultiplier;
+    public Vector2f getGravity() {
+        return gravity;
     }
 
-    public ParticleEmitterScript setGravityMultiplier(float gravityMultiplier) {
-        this.gravityMultiplier = gravityMultiplier;
+    public ParticleEmitterScript setGravity(Vector2f gravity) {
+        this.gravity = gravity;
         return this;
     }
 
@@ -252,6 +255,15 @@ public class ParticleEmitterScript extends Script {
 
     public ParticleEmitterScript setTimeToCreateParticle(float timeToCreateParticle) {
         this.timeToCreateParticle = timeToCreateParticle;
+        return this;
+    }
+
+    public boolean isInstantiateParticlesInParent() {
+        return instantiateParticlesInParent;
+    }
+
+    public ParticleEmitterScript setInstantiateParticlesInParent(boolean instantiateParticlesInParent) {
+        this.instantiateParticlesInParent = instantiateParticlesInParent;
         return this;
     }
 }

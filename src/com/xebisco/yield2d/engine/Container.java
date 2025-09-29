@@ -10,10 +10,11 @@ public class Container implements Handler, Comparable<Container>, Drawer {
 
     private short layer;
     private Object context;
-    private final List<Container> children = new ArrayList<>(), toRemove = new ArrayList<>();
+    private final List<Container> children = new ArrayList<>(), toRemove = new ArrayList<>(), toAdd = new ArrayList<>();
     private final Script[] scripts;
     private int frames;
-    private final Transform2f transform = new Transform2f();
+    private Transform2f transform = new Transform2f();
+    private boolean loaded;
 
     public Container(Script[] scripts) {
         this.scripts = scripts;
@@ -32,6 +33,7 @@ public class Container implements Handler, Comparable<Container>, Drawer {
     @Override
     public void load() {
         frames = 0;
+        loaded = true;
         callOnAllScripts(Script::load);
         callOnAllChildren(child -> {
             if (!getToRemove().contains(child))
@@ -41,6 +43,7 @@ public class Container implements Handler, Comparable<Container>, Drawer {
 
     @Override
     public void init() {
+        if(!loaded) load();
         sortChildren();
         callOnAllScripts(Script::init);
     }
@@ -49,11 +52,17 @@ public class Container implements Handler, Comparable<Container>, Drawer {
     public void update(TimeSpan elapsed) {
         sortChildren();
         callOnAllScripts(script -> script.update(elapsed));
+        children.addAll(toAdd);
+        toAdd.clear();
         callOnAllChildren(child -> {
             if (!getToRemove().contains(child))
                 child.tick(elapsed);
         });
         frames++;
+    }
+
+    public void addChild(Container child) {
+        toAdd.add(child);
     }
 
     public void tick(TimeSpan elapsed) {
@@ -80,6 +89,8 @@ public class Container implements Handler, Comparable<Container>, Drawer {
 
     @Override
     public void destroy() {
+        loaded = false;
+        frames = 0;
         if (getParent() != null) {
             getParent().getToRemove().add(this);
         }
@@ -189,7 +200,21 @@ public class Container implements Handler, Comparable<Container>, Drawer {
         return transform;
     }
 
+    public Container setTransform(Transform2f transform) {
+        this.transform = transform;
+        return this;
+    }
+
     public List<Container> getToRemove() {
         return toRemove;
+    }
+
+    public boolean isLoaded() {
+        return loaded;
+    }
+
+    public Container setLoaded(boolean loaded) {
+        this.loaded = loaded;
+        return this;
     }
 }

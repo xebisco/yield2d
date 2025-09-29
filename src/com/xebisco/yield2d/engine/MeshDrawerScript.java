@@ -32,7 +32,7 @@ public class MeshDrawerScript extends Script implements Drawer {
     @CantBeNull
     private Mesh2f mesh;
     @Editable
-    private TextureFile textureFile = new TextureFile("default.png");
+    private TextureFile textureFile;
     @Editable
     private boolean scaleToTextureSize;
     @Editable

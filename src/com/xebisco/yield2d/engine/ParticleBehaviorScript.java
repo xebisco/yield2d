@@ -4,7 +4,7 @@ class ParticleBehaviorScript extends Script {
 
     private final ParticleEmitterScript emitter;
 
-    private final Vector2f gravity = new Vector2f(0, -10), velocity = new Vector2f();
+    private final Vector2f velocity = new Vector2f();
 
     private MeshDrawerScript md;
 
@@ -42,7 +42,6 @@ class ParticleBehaviorScript extends Script {
         md = getScript(MeshDrawerScript.class);
         md.setTextureFile(emitter.getTextureFile());
         md.setExtraScale(size());
-        gravity.multiplyLocal(emitter.getGravityMultiplier());
         velocity.addLocal(startSpeed().rotate((float) Math.toDegrees(direction())));
         getTransform().rotate(rotation());
     }
@@ -50,20 +49,21 @@ class ParticleBehaviorScript extends Script {
     @Override
     public void update(TimeSpan elapsed) {
         remainingLife -= elapsed.getSeconds();
-        float r = TweeningInfo.Easing.LINEAR.call(null, emitter.getMaxLifeSeconds() - remainingLife, emitter.getStartColor().getRed(), emitter.getEndColor().getRed(), emitter.getMaxLifeSeconds());
-        float g = TweeningInfo.Easing.LINEAR.call(null, emitter.getMaxLifeSeconds() - remainingLife, emitter.getStartColor().getGreen(), emitter.getEndColor().getGreen(), emitter.getMaxLifeSeconds());
-        float b = TweeningInfo.Easing.LINEAR.call(null, emitter.getMaxLifeSeconds() - remainingLife, emitter.getStartColor().getBlue(), emitter.getEndColor().getBlue(), emitter.getMaxLifeSeconds());
-        float a = TweeningInfo.Easing.LINEAR.call(null, emitter.getMaxLifeSeconds() - remainingLife, emitter.getStartColor().getAlpha(), emitter.getEndColor().getAlpha(), emitter.getMaxLifeSeconds());
+        float l = 1 - remainingLife / emitter.getMaxLifeSeconds();
+        float r = emitter.getStartColor().getRed() + ((-emitter.getStartColor().getRed() + emitter.getEndColor().getRed())) * l;
+        float g = emitter.getStartColor().getGreen() + ((-emitter.getStartColor().getGreen() + emitter.getEndColor().getGreen()) * l);
+        float b = emitter.getStartColor().getBlue() + ((-emitter.getStartColor().getBlue() + emitter.getEndColor().getBlue()) * l);
+        float a = emitter.getStartColor().getAlpha() + ((-emitter.getStartColor().getAlpha() + emitter.getEndColor().getAlpha()) * l);
         md.setColor(new Color(
-                emitter.isInvertColorTransition() ? 1 - r : r,
-                emitter.isInvertColorTransition() ? 1 - g : g,
-                emitter.isInvertColorTransition() ? 1 - b : b,
-                emitter.isInvertColorTransition() ? 1 - a : a
+                r,
+                g,
+                b,
+                a
         ));
         if (remainingLife <= 0) {
             getContainer().destroy();
         }
-        velocity.addLocal(gravity);
+        velocity.addLocal(emitter.getGravity());
         velocity.addLocal(new Vector2f(
                 Utils.randomFloat(-emitter.getSpeedNoise().getX(), emitter.getSpeedNoise().getX()),
                 Utils.randomFloat(-emitter.getSpeedNoise().getY(), emitter.getSpeedNoise().getY())
@@ -73,10 +73,6 @@ class ParticleBehaviorScript extends Script {
 
     public ParticleEmitterScript getEmitter() {
         return emitter;
-    }
-
-    public Vector2f getGravity() {
-        return gravity;
     }
 
     public Vector2f getVelocity() {

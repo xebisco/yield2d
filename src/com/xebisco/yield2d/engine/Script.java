@@ -1,5 +1,7 @@
 package com.xebisco.yield2d.engine;
 
+import com.xebisco.yield2d.engine.physics.Collider;
+
 public abstract class Script implements Handler {
     private Container container;
 
@@ -20,6 +22,14 @@ public abstract class Script implements Handler {
 
     @Override
     public void destroy() {
+
+    }
+
+    public void onCollisionEnter(Collider colliding) {
+
+    }
+
+    public void onCollisionExit(Collider colliding) {
 
     }
 
