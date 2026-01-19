@@ -2,10 +2,10 @@
   <artifact name="engine:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/engine_jar</output-path>
     <root id="root">
+      <element id="library" level="project" name="core-libs" />
       <element id="archive" name="yield_engine.jar">
         <element id="module-output" name="engine" />
       </element>
-      <element id="library" level="project" name="core-libs" />
     </root>
   </artifact>
 </component>

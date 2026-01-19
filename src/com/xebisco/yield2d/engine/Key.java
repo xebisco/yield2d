@@ -129,7 +129,14 @@ public enum Key {
     KB_RIGHT_PARENTHESIS,
     KB_PLUS,
     KB_UNDERSCORE,
-    KB_CONTEXT_MENU;
+    KB_CONTEXT_MENU,
+    MOUSE_1,
+    MOUSE_2,
+    MOUSE_3,
+    MOUSE_4,
+    MOUSE_5,
+    MOUSE_WUP,
+    MOUSE_WDOWN;
 
     private final Character character;
 

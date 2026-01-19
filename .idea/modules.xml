@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/desktop/desktop.iml" filepath="$PROJECT_DIR$/desktop/desktop.iml" />
-      <module fileurl="file://$PROJECT_DIR$/editor/editor.iml" filepath="$PROJECT_DIR$/editor/editor.iml" />
       <module fileurl="file://$PROJECT_DIR$/engine.iml" filepath="$PROJECT_DIR$/engine.iml" />
       <module fileurl="file://$PROJECT_DIR$/openalimpl/openalimpl.iml" filepath="$PROJECT_DIR$/openalimpl/openalimpl.iml" />
       <module fileurl="file://$PROJECT_DIR$/openglimpl/openglimpl.iml" filepath="$PROJECT_DIR$/openglimpl/openglimpl.iml" />

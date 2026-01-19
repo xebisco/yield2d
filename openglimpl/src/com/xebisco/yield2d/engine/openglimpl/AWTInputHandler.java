@@ -7,6 +7,8 @@ import com.xebisco.yield2d.engine.TimeSpan;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,6 +25,18 @@ public class AWTInputHandler extends InputHandler {
         @Override
         public void keyReleased(KeyEvent e) {
             pressedKeys.remove(fromAWTKeyCodeToYieldKey(e.getKeyCode()));
+        }
+    }
+
+    class AWTMouseAdapter extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent e) {
+            pressedKeys.add(fromAWTMouseButtonToYieldKey(e.getButton()));
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            pressedKeys.remove(fromAWTMouseButtonToYieldKey(e.getButton()));
         }
     }
 
@@ -161,6 +175,13 @@ public class AWTInputHandler extends InputHandler {
             case KeyEvent.VK_RIGHT_PARENTHESIS -> Key.KB_RIGHT_PARENTHESIS;
             case KeyEvent.VK_UNDERSCORE -> Key.KB_UNDERSCORE;
             case KeyEvent.VK_CONTEXT_MENU -> Key.KB_CONTEXT_MENU;
+            default -> Key.UNDEFINED;
+        };
+    }
+
+    public static Key fromAWTMouseButtonToYieldKey(int keyCode) {
+        return switch (keyCode) {
+            case KeyEvent.VK_ENTER -> Key.KB_ENTER;
             default -> Key.UNDEFINED;
         };
     }

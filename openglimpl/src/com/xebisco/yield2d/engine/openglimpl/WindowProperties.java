@@ -14,6 +14,7 @@ public class WindowProperties implements Serializable {
     }
 
     public enum ViewportStyle {
+        FIT_ON_FRAME,
         STRETCH_TO_FIT,
         SCALE_TO_FIT
     }

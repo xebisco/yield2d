@@ -87,6 +87,7 @@ public final class Application extends HandlerCollection {
     private TimeSpan updateInterval = new TimeSpan(16_666_667);
     private ApplicationLoop loop;
     private Map<String, Axis> axisMap;
+    private boolean destroyed;
 
     public Application(Type type) {
         this.type = type;
@@ -162,6 +163,15 @@ public final class Application extends HandlerCollection {
         Debug.println("Starting application " + this + "...");
         loop = new ApplicationLoop();
         Debug.println(this + " started.");
+    }
+
+    @Override
+    public void destroy() {
+        loop.running.set(false);
+        if(!destroyed) {
+            destroyed = true;
+            super.destroy();
+        }
     }
 
     public void loadTextureAtlas(TextureAtlasFile textureAtlasFile) {
@@ -274,5 +284,14 @@ public final class Application extends HandlerCollection {
 
     public void setLoop(ApplicationLoop loop) {
         this.loop = loop;
+    }
+
+    public boolean isDestroyed() {
+        return destroyed;
+    }
+
+    public Application setDestroyed(boolean destroyed) {
+        this.destroyed = destroyed;
+        return this;
     }
 }

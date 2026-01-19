@@ -4,7 +4,6 @@
     <root id="root">
       <element id="archive" name="yield_desktop.jar">
         <element id="module-output" name="desktop" />
-        <element id="module-output" name="engine" />
       </element>
     </root>
   </artifact>

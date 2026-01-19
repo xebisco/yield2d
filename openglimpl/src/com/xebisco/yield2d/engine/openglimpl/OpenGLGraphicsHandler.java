@@ -5,7 +5,6 @@ import com.xebisco.yield2d.engine.Color;
 import com.xebisco.yield2d.engine.Graphics;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.awt.AWTGLCanvas;
 import org.lwjgl.opengl.awt.GLData;
@@ -15,6 +14,8 @@ import org.lwjgl.system.MemoryUtil;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -330,10 +331,18 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glEnable(GL_SCISSOR_TEST);
+            updateProjectionMatrix();
+        }
 
+        private void updateProjectionMatrix() {
             int width = windowProperties.getViewportSize().getX(), height = windowProperties.getViewportSize().getY();
 
-            projectionMatrix.ortho(-width / 2f, width / 2f, -height / 2f, height / 2f, 0, 1f);
+            if(windowProperties.getViewportStyle() == WindowProperties.ViewportStyle.FIT_ON_FRAME) {
+                width = getWidth();
+                height = getHeight();
+            }
+
+            projectionMatrix.identity().ortho(-width / 2f, width / 2f, -height / 2f, height / 2f, -1f, 1f);
         }
 
         public void runQueue() {
@@ -671,6 +680,12 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
         data.swapInterval = windowProperties.isVerticalSync() ? 1 : 0;
 
         mainPanel.add(canvas = new CanvasImpl(data));
+        mainPanel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                canvas.updateProjectionMatrix();
+            }
+        });
         canvas.setFocusable(false);
         canvas.setIgnoreRepaint(true);
     }
@@ -737,7 +752,7 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
     @Override
     public void destroy() {
         if (frame != null && frame.isDisplayable()) frame.dispose();
-        plainShader.cleanup();
+        runOnOGLContext.add(plainShader::cleanup);
     }
 
     @Override
@@ -762,6 +777,11 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
             textureCache.put(texture, new OpenGLTexture(image.getSubimage(clip.getX(), clip.getY(), clip.getWidth(), clip.getHeight()), info.filter()));
             clip.setTexture(texture);
         }
+    }
+
+    @Override
+    public ImmutableVector2i getCanvasSize() {
+        return new ImmutableVector2i(canvas.getWidth(), canvas.getHeight());
     }
 
     public JFrame getFrame() {
