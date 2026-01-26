@@ -18,7 +18,13 @@ public class Hello {
         Scene scene = new Scene();
 
         scene.addChild(new Container(new Script[]{
-                new TextDrawer("Hello, World!")
+                new TextDrawer("Hello, World!"),
+                new Script() {
+                    @Override
+                    public void update(TimeSpan elapsed) {
+                        getTransform().rotate(10);
+                    }
+                }
         }));
 
         app.getSceneHandler().setActualScene(scene);

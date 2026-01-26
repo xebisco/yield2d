@@ -30,31 +30,35 @@ public class TextDrawer extends Script implements Drawer {
         return contents;
     }
 
-    public void setContents(String contents) {
+    public TextDrawer setContents(String contents) {
         this.contents = contents;
+        return this;
     }
 
     public FontFile getFontFile() {
         return fontFile;
     }
 
-    public void setFontFile(FontFile fontFile) {
+    public TextDrawer setFontFile(FontFile fontFile) {
         this.fontFile = fontFile;
+        return this;
     }
 
     public Color getColor() {
         return color;
     }
 
-    public void setColor(Color color) {
+    public TextDrawer setColor(Color color) {
         this.color = color;
+        return this;
     }
 
     public float getCharactersRotation() {
         return charactersRotation;
     }
 
-    public void setCharactersRotation(float charactersRotation) {
+    public TextDrawer setCharactersRotation(float charactersRotation) {
         this.charactersRotation = charactersRotation;
+        return this;
     }
 }
