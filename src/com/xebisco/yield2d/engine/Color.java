@@ -51,6 +51,13 @@ public class Color {
         this.alpha = Math.min(1, Math.max(0, alpha));
     }
 
+    public void set(float r, float g, float b, float a) {
+        setRed(r);
+        setGreen(g);
+        setBlue(b);
+        setAlpha(a);
+    }
+
     public float getRed() {
         return red;
     }
@@ -70,5 +77,4 @@ public class Color {
     public int getArgb() {
         return getIntFrom8BitColor((int) (getRed() * 255), (int) (getGreen() * 255), (int) (getBlue() * 255), (int) (getAlpha() * 255));
     }
-
 }

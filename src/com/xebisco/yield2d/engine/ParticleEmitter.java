@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ParticleEmitter extends Script implements Drawer {
-
     @Editable
     @CantBeNull
     private Vector2f point = new Vector2f(), pointNoise = new Vector2f(), rectSize = new Vector2f();
@@ -16,14 +15,6 @@ public class ParticleEmitter extends Script implements Drawer {
     @Editable
     private TextureFile textureFile = new TextureFile("default_particle.png");
 
-    public TextureFile getTextureFile() {
-        return textureFile;
-    }
-
-    public void setTextureFile(TextureFile textureFile) {
-        this.textureFile = textureFile;
-    }
-
     @Editable
     @CantBeNull
     private float maxLifeSeconds = 3f, direction, directionNoise = 180, rotation, rotationNoise = 180;
@@ -34,43 +25,54 @@ public class ParticleEmitter extends Script implements Drawer {
 
     @Editable
     @CantBeNull
-    private Vector2f gravity = new Vector2f(0, -10), startSpeed = new Vector2f(80f, 0), startSpeedNoise = new Vector2f(), speedNoise = new Vector2f(), size = new Vector2f(100, 100), sizeNoise = new Vector2f();
+    private Vector2f gravity = new Vector2f(0, -10), startSpeed = new Vector2f(80f, 0), startSpeedNoise = new Vector2f(), speedNoise = new Vector2f(), size = new Vector2f(100, 100), startSizeNoise = new Vector2f();
 
     @Editable
     @CantBeNull
-    private boolean invertColorTransition = false, populate = true;
+    private boolean invertColorTransition = false, populate;
 
-    private List<Particle> particleList = new ArrayList<>();
+    private final List<Particle> particleList = new ArrayList<>();
+    private ObjectPool<Particle> particlePool;
 
     private float timeToCreateParticle;
 
-    private float emissionRate() {
-        return getEmissionRatePerSecond() + Utils.randomFloat(-getEmissionRateNoise(), getEmissionRateNoise());
+    // Helper for fast random
+    private float rand(float min, float max) {
+        return Utils.randomFloat(min, max);
     }
 
-    private Vector2f point() {
-        return new Vector2f(
-                point.getX() + Utils.randomFloat(-pointNoise.getX(), pointNoise.getY()),
-                point.getY() + Utils.randomFloat(-pointNoise.getY(), pointNoise.getY())
-        );
+    private float emissionRate() {
+        return getEmissionRatePerSecond() + rand(-getEmissionRateNoise(), getEmissionRateNoise());
     }
 
     private Particle createNewParticle() {
-        Particle part = new Particle(this);
+        Particle part = particlePool.acquire();
+
         particleList.add(part);
-        part.getTransform().translate(point());
-        part.getTransform().translate(new Vector2f(Utils.randomFloat(-getRectSize().getX() / 2, getRectSize().getX() / 2), Utils.randomFloat(-getRectSize().getY() / 2, getRectSize().getY())));
+
+        float px = point.getX() + rand(-pointNoise.getX(), pointNoise.getY());
+        float py = point.getY() + rand(-pointNoise.getY(), pointNoise.getY());
+
+        part.getTransform().getPosition().setX(px);
+        part.getTransform().getPosition().setY(py);
+
+        part.getTransform().translate(new Vector2f(
+                rand(-getRectSize().getX() / 2, getRectSize().getX() / 2),
+                rand(-getRectSize().getY() / 2, getRectSize().getY())
+        ));
+
         return part;
     }
 
     @Override
     public void init() {
         timeToCreateParticle = 0;
+
+        particlePool = new ArrayListObjectPool<>(() -> new Particle(this), 1000);
     }
 
     @Override
     public void update(TimeSpan elapsed) {
-        System.out.println(getContainer().getFrames());
         if(getContainer().getFrames() == 2) {
             if(populate) {
                 int lasting = (int) (maxLifeSeconds * emissionRatePerSecond);
@@ -87,33 +89,33 @@ public class ParticleEmitter extends Script implements Drawer {
         }
         timeToCreateParticle += elapsed.getSeconds();
 
-        for(Particle p : particleList) p.update(elapsed);
-        /*
-        IntStream.range(0, particleList.size()).parallel().forEach(i -> {
-            try {
-                particleList.get(i).update(elapsed);
-            } catch (IndexOutOfBoundsException | NullPointerException ignore) {
-            }
-        });
+        for (int i = particleList.size() - 1; i >= 0; i--) {
+            Particle p = particleList.get(i);
+            boolean isAlive = p.update(elapsed);
 
-         */
+            if (!isAlive) {
+                particlePool.release(p);
+                int lastIndex = particleList.size() - 1;
+                if (i != lastIndex) {
+                    particleList.set(i, particleList.get(lastIndex));
+                }
+                particleList.remove(lastIndex);
+            }
+        }
     }
 
     @Override
     public void draw(Graphics graphics) {
-        for(Particle particle : particleList) {
-            if(particle == null) return;
+        for (Particle particle : particleList) {
+            if (particle == null) continue;
             graphics.start();
-
             Transform2f trans = particle.getTransform();
-
             graphics.translate(trans.getPosition().getX(), trans.getPosition().getY());
-            graphics.rotate(trans.getRotation());
-            graphics.scale(trans.getScale().getX(), trans.getScale().getY());
-            if (textureFile != null) {
-                Vector2i texSize = getTextureSize(textureFile);
-                graphics.scale(texSize.getX(), texSize.getY());
-            }
+            graphics.rotate(particle.getRotation());
+
+            Vector2f size = particle.getSize();
+            graphics.scale(trans.getScale().getX() * size.getX(), trans.getScale().getY() * size.getY());
+
             graphics.drawMesh(MeshDrawer.DefaultMeshes.RECTANGLE.getValue(), textureFile, particle.getColor());
             graphics.end();
         }
@@ -125,6 +127,15 @@ public class ParticleEmitter extends Script implements Drawer {
 
     public ParticleEmitter setPoint(Vector2f point) {
         this.point = point;
+        return this;
+    }
+
+    public Vector2f getPointNoise() {
+        return pointNoise;
+    }
+
+    public ParticleEmitter setPointNoise(Vector2f pointNoise) {
+        this.pointNoise = pointNoise;
         return this;
     }
 
@@ -155,21 +166,21 @@ public class ParticleEmitter extends Script implements Drawer {
         return this;
     }
 
+    public TextureFile getTextureFile() {
+        return textureFile;
+    }
+
+    public ParticleEmitter setTextureFile(TextureFile textureFile) {
+        this.textureFile = textureFile;
+        return this;
+    }
+
     public float getMaxLifeSeconds() {
         return maxLifeSeconds;
     }
 
     public ParticleEmitter setMaxLifeSeconds(float maxLifeSeconds) {
         this.maxLifeSeconds = maxLifeSeconds;
-        return this;
-    }
-
-    public Vector2f getGravity() {
-        return gravity;
-    }
-
-    public ParticleEmitter setGravity(Vector2f gravity) {
-        this.gravity = gravity;
         return this;
     }
 
@@ -227,6 +238,15 @@ public class ParticleEmitter extends Script implements Drawer {
         return this;
     }
 
+    public Vector2f getGravity() {
+        return gravity;
+    }
+
+    public ParticleEmitter setGravity(Vector2f gravity) {
+        this.gravity = gravity;
+        return this;
+    }
+
     public Vector2f getStartSpeed() {
         return startSpeed;
     }
@@ -263,12 +283,12 @@ public class ParticleEmitter extends Script implements Drawer {
         return this;
     }
 
-    public Vector2f getSizeNoise() {
-        return sizeNoise;
+    public Vector2f getStartSizeNoise() {
+        return startSizeNoise;
     }
 
-    public ParticleEmitter setSizeNoise(Vector2f sizeNoise) {
-        this.sizeNoise = sizeNoise;
+    public ParticleEmitter setStartSizeNoise(Vector2f startSizeNoise) {
+        this.startSizeNoise = startSizeNoise;
         return this;
     }
 
@@ -281,15 +301,6 @@ public class ParticleEmitter extends Script implements Drawer {
         return this;
     }
 
-    public float getTimeToCreateParticle() {
-        return timeToCreateParticle;
-    }
-
-    public ParticleEmitter setTimeToCreateParticle(float timeToCreateParticle) {
-        this.timeToCreateParticle = timeToCreateParticle;
-        return this;
-    }
-
     public boolean isPopulate() {
         return populate;
     }
@@ -299,21 +310,20 @@ public class ParticleEmitter extends Script implements Drawer {
         return this;
     }
 
-    public Vector2f getPointNoise() {
-        return pointNoise;
-    }
-
-    public ParticleEmitter setPointNoise(Vector2f pointNoise) {
-        this.pointNoise = pointNoise;
-        return this;
-    }
-
     public List<Particle> getParticleList() {
         return particleList;
     }
 
-    public ParticleEmitter setParticleList(List<Particle> particleList) {
-        this.particleList = particleList;
+    public ObjectPool<Particle> getParticlePool() {
+        return particlePool;
+    }
+
+    public float getTimeToCreateParticle() {
+        return timeToCreateParticle;
+    }
+
+    public ParticleEmitter setTimeToCreateParticle(float timeToCreateParticle) {
+        this.timeToCreateParticle = timeToCreateParticle;
         return this;
     }
 }

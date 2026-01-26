@@ -11,6 +11,7 @@ public class TestMain {
         Debug.println("Hello, World!");
 
         Application app = new Application(Application.Type.GAME);
+        app.setUpdateInterval(new TimeSpan(8_333_333));
 
         app.setGraphicsHandler(new OpenGLGraphicsHandler());
         app.setInputHandler(new AWTInputHandler());
@@ -29,24 +30,24 @@ public class TestMain {
         });
         app.getSceneHandler().getActualScene().addChild(c);
 
-        Container particles = new Container(new Script[] {
+        Container particles = new Container(new Script[]{
                 new ParticleEmitter()
-                        .setEmissionRatePerSecond(60f).setPopulate(false),
-                new Follow(c)
-                /*
-                .setGravity(new Vector2f(0, 500))
+                        .setGravity(new Vector2f(0, 500))
                         .setSpeedNoise(new Vector2f(100, 100))
                         .setStartSpeed(new Vector2f(0, 0))
-                        .setEmissionRatePerSecond(60f)
-                        .setSize(new Vector2f(150, 150))
+                        .setEmissionRatePerSecond(1000f)
+                        .setSize(new Vector2f(40, 40))
+                        .setStartSizeNoise(new Vector2f(20, 20))
                         .setMaxLifeSeconds(.01f)
                         .setStartColor(new Color(0, .5f, 1, .1f))
-                        .setEndColor(new Color(0, 1, 1, 0))
-                        .setSizeNoise(new Vector2f(30, 30))
+                        .setEndColor(new Color(0, .5f, 1, 0))
                         .setMaxLifeSeconds(1f)
                         .setPointNoise(new Vector2f(100, 100))
-                        .setPopulate(true),
-                 */
+                        .setPopulate(true)
+                ,
+                new Follow(c)
+
+
         });
         app.getSceneHandler().getActualScene().addChild(particles);
 
