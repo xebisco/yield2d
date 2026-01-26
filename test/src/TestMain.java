@@ -35,7 +35,7 @@ public class TestMain {
                         .setGravity(new Vector2f(0, 500))
                         .setSpeedNoise(new Vector2f(100, 100))
                         .setStartSpeed(new Vector2f(0, 0))
-                        .setEmissionRatePerSecond(1000f)
+                        .setEmissionRate(1000f)
                         .setSize(new Vector2f(40, 40))
                         .setStartSizeNoise(new Vector2f(20, 20))
                         .setMaxLifeSeconds(.01f)

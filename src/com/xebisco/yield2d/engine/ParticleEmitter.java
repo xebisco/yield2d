@@ -10,7 +10,7 @@ public class ParticleEmitter extends Script implements Drawer {
 
     @Editable
     @CantBeNull
-    private float emissionRatePerSecond = 8f, emissionRateNoise = 0f;
+    private float emissionRate = 8f, emissionRateNoise = 0f, timeToSpawn = 0f;
 
     @Editable
     private TextureFile textureFile = new TextureFile("default_particle.png");
@@ -34,7 +34,7 @@ public class ParticleEmitter extends Script implements Drawer {
     private final List<Particle> particleList = new ArrayList<>();
     private ObjectPool<Particle> particlePool;
 
-    private float timeToCreateParticle;
+    private float timeToCreateParticle, spawnTimeCounter;
 
     // Helper for fast random
     private float rand(float min, float max) {
@@ -42,7 +42,7 @@ public class ParticleEmitter extends Script implements Drawer {
     }
 
     private float emissionRate() {
-        return getEmissionRatePerSecond() + rand(-getEmissionRateNoise(), getEmissionRateNoise());
+        return getEmissionRate() + rand(-getEmissionRateNoise(), getEmissionRateNoise());
     }
 
     private Particle createNewParticle() {
@@ -73,21 +73,28 @@ public class ParticleEmitter extends Script implements Drawer {
 
     @Override
     public void update(TimeSpan elapsed) {
-        if(getContainer().getFrames() == 2) {
-            if(populate) {
-                int lasting = (int) (maxLifeSeconds * emissionRatePerSecond);
-                for(int i = 0; i < lasting; i++) {
+        if (getContainer().getFrames() == 2) {
+            if (populate) {
+                int lasting = (int) (maxLifeSeconds * emissionRate);
+                for (int i = 0; i < lasting; i++) {
                     Particle part = createNewParticle();
-                    part.update(new TimeSpan((long) (i / emissionRatePerSecond * 1_000_000_000)));
+                    part.update(new TimeSpan((long) (i / emissionRate * 1_000_000_000)));
                 }
             }
         }
-        float er = 1f / emissionRate();
-        while (timeToCreateParticle >= er) {
-            timeToCreateParticle -= er;
-            createNewParticle().update(new TimeSpan(0));
-        }
         timeToCreateParticle += elapsed.getSeconds();
+
+        spawnTimeCounter += elapsed.getSeconds();
+
+        if(spawnTimeCounter >= timeToSpawn) {
+            spawnTimeCounter = 0;
+
+            float er = 1f / emissionRate();
+            while (timeToCreateParticle >= er) {
+                timeToCreateParticle -= er;
+                createNewParticle().update(new TimeSpan(0));
+            }
+        }
 
         for (int i = particleList.size() - 1; i >= 0; i--) {
             Particle p = particleList.get(i);
@@ -148,12 +155,12 @@ public class ParticleEmitter extends Script implements Drawer {
         return this;
     }
 
-    public float getEmissionRatePerSecond() {
-        return emissionRatePerSecond;
+    public float getEmissionRate() {
+        return emissionRate;
     }
 
-    public ParticleEmitter setEmissionRatePerSecond(float emissionRatePerSecond) {
-        this.emissionRatePerSecond = emissionRatePerSecond;
+    public ParticleEmitter setEmissionRate(float emissionRate) {
+        this.emissionRate = emissionRate;
         return this;
     }
 
@@ -322,8 +329,31 @@ public class ParticleEmitter extends Script implements Drawer {
         return timeToCreateParticle;
     }
 
-    public ParticleEmitter setTimeToCreateParticle(float timeToCreateParticle) {
+    private ParticleEmitter setTimeToCreateParticle(float timeToCreateParticle) {
         this.timeToCreateParticle = timeToCreateParticle;
+        return this;
+    }
+
+    public float getTimeToSpawn() {
+        return timeToSpawn;
+    }
+
+    public ParticleEmitter setTimeToSpawn(float timeToSpawn) {
+        this.timeToSpawn = timeToSpawn;
+        return this;
+    }
+
+    public ParticleEmitter setParticlePool(ObjectPool<Particle> particlePool) {
+        this.particlePool = particlePool;
+        return this;
+    }
+
+    public float getSpawnTimeCounter() {
+        return spawnTimeCounter;
+    }
+
+    private ParticleEmitter setSpawnTimeCounter(float spawnTimeCounter) {
+        this.spawnTimeCounter = spawnTimeCounter;
         return this;
     }
 }

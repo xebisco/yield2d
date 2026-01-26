@@ -40,7 +40,7 @@ public class MeshDrawer extends Script implements Drawer {
     private Color color = new Color(1f, 1f, 1f, 1f);
     @Editable
     @CantBeNull
-    private Vector2f extraScale = new Vector2f(1f, 1f);
+    private Vector2f extraScale = new Vector2f(100f, 100f);
 
     public MeshDrawer() {
         this(DefaultMeshes.RECTANGLE.getValue());
