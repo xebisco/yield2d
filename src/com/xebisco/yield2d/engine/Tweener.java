@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class TweenerScript extends Script {
+public class Tweener extends Script {
 
     private class PointMod {
         private final Object scriptObject;
@@ -41,7 +41,7 @@ public class TweenerScript extends Script {
     private float time;
     private Map<TweeningInfo.TweeningPoint, PointMod> scriptObjectsMap;
 
-    public TweenerScript() {
+    public Tweener() {
     }
 
     @Override
@@ -109,7 +109,7 @@ public class TweenerScript extends Script {
         return playingInfo;
     }
 
-    public TweenerScript setPlayingInfo(TweeningInfo playingInfo) {
+    public Tweener setPlayingInfo(TweeningInfo playingInfo) {
         this.playingInfo = playingInfo;
         return this;
     }
@@ -118,7 +118,7 @@ public class TweenerScript extends Script {
         return time;
     }
 
-    public TweenerScript setTime(float time) {
+    public Tweener setTime(float time) {
         this.time = time;
         return this;
     }
@@ -127,7 +127,7 @@ public class TweenerScript extends Script {
         return scriptObjectsMap;
     }
 
-    public TweenerScript setScriptObjectsMap(Map<TweeningInfo.TweeningPoint, PointMod> scriptObjectsMap) {
+    public Tweener setScriptObjectsMap(Map<TweeningInfo.TweeningPoint, PointMod> scriptObjectsMap) {
         this.scriptObjectsMap = scriptObjectsMap;
         return this;
     }

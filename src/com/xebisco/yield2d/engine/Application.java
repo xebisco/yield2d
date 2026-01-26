@@ -42,6 +42,34 @@ public final class Application extends HandlerCollection {
         @Override
         public void run() {
             running.set(true);
+            long nextTick = System.nanoTime(), lastTick = nextTick, now = lastTick, waitTarget;
+
+            while (running.get()) {
+                while (now >= nextTick) {
+                    now = System.nanoTime();
+                    update(new TimeSpan(now - lastTick));
+                    lastTick = now;
+                    nextTick += updateInterval.nanoSeconds();
+                }
+
+                now = System.nanoTime();
+                waitTarget = nextTick - now;
+
+                if (waitTarget > 2_000_000) {
+                    try {
+                        //noinspection BusyWait
+                        Thread.sleep((waitTarget - 2_000_000) / 1_000_000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+
+                while (System.nanoTime() < nextTick) {
+                    //NOTHING, JUST WAIT
+                }
+            }
+
+
             long last = System.nanoTime(), actual;
             long value = 0;
             while (running.get()) {

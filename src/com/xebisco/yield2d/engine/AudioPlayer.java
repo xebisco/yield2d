@@ -1,6 +1,6 @@
 package com.xebisco.yield2d.engine;
 
-public class AudioPlayerScript extends Script {
+public class AudioPlayer extends Script {
     @Editable
     @CantBeNull
     private AudioFile audioFile;
@@ -43,7 +43,7 @@ public class AudioPlayerScript extends Script {
         return audioFile;
     }
 
-    public AudioPlayerScript setAudioFile(AudioFile audioFile) {
+    public AudioPlayer setAudioFile(AudioFile audioFile) {
         stop();
         this.audioFile = audioFile;
         return this;
@@ -53,7 +53,7 @@ public class AudioPlayerScript extends Script {
         return gain;
     }
 
-    public AudioPlayerScript setGain(double gain) {
+    public AudioPlayer setGain(double gain) {
         this.gain = gain;
         return this;
     }
@@ -62,7 +62,7 @@ public class AudioPlayerScript extends Script {
         return pan;
     }
 
-    public AudioPlayerScript setPan(double pan) {
+    public AudioPlayer setPan(double pan) {
         this.pan = pan;
         return this;
     }
@@ -71,7 +71,7 @@ public class AudioPlayerScript extends Script {
         return playOnInit;
     }
 
-    public AudioPlayerScript setPlayOnInit(boolean playOnInit) {
+    public AudioPlayer setPlayOnInit(boolean playOnInit) {
         this.playOnInit = playOnInit;
         return this;
     }
@@ -80,7 +80,7 @@ public class AudioPlayerScript extends Script {
         return loop;
     }
 
-    public AudioPlayerScript setLoop(boolean loop) {
+    public AudioPlayer setLoop(boolean loop) {
         this.loop = loop;
         return this;
     }

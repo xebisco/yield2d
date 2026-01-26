@@ -1,14 +1,9 @@
 package com.xebisco.yield2d.engine;
 
-import java.io.Serializable;
-import java.util.concurrent.CompletableFuture;
+import java.util.ArrayList;
+import java.util.List;
 
-public class ParticleEmitterScript extends Script {
-
-    public enum SimulationOptions {
-        INTERNAL,
-        RIGID_BODY
-    }
+public class ParticleEmitter extends Script implements Drawer {
 
     @Editable
     @CantBeNull
@@ -18,21 +13,8 @@ public class ParticleEmitterScript extends Script {
     @CantBeNull
     private float emissionRatePerSecond = 8f, emissionRateNoise = 0f;
 
-    @Options(SimulationOptions.class)
-    @Editable
-    @CantBeNull
-    private SimulationOptions simulationOpt = SimulationOptions.INTERNAL;
-
     @Editable
     private TextureFile textureFile = new TextureFile("default_particle.png");
-
-    public SimulationOptions getSimulationOpt() {
-        return simulationOpt;
-    }
-
-    public void setSimulationOpt(SimulationOptions simulationOpt) {
-        this.simulationOpt = simulationOpt;
-    }
 
     public TextureFile getTextureFile() {
         return textureFile;
@@ -56,7 +38,9 @@ public class ParticleEmitterScript extends Script {
 
     @Editable
     @CantBeNull
-    private boolean invertColorTransition = false, instantiateParticlesInParent, populate = true;
+    private boolean invertColorTransition = false, populate = true;
+
+    private List<Particle> particleList = new ArrayList<>();
 
     private float timeToCreateParticle;
 
@@ -71,18 +55,11 @@ public class ParticleEmitterScript extends Script {
         );
     }
 
-    private Container createNewParticle() {
-        Container part = new Container(new Script[]{
-                new ParticleBehaviorScript(this),
-                new MeshDrawerScript(MeshDrawerScript.DefaultMeshes.RECTANGLE.getValue())
-        });
+    private Particle createNewParticle() {
+        Particle part = new Particle(this);
+        particleList.add(part);
         part.getTransform().translate(point());
         part.getTransform().translate(new Vector2f(Utils.randomFloat(-getRectSize().getX() / 2, getRectSize().getX() / 2), Utils.randomFloat(-getRectSize().getY() / 2, getRectSize().getY())));
-
-        (instantiateParticlesInParent ? getContainer().getParent() : getContainer()).addChild(part);
-        if(instantiateParticlesInParent) {
-            part.getTransform().translate(getTransform().getPosition());
-        }
         return part;
     }
 
@@ -93,12 +70,12 @@ public class ParticleEmitterScript extends Script {
 
     @Override
     public void update(TimeSpan elapsed) {
+        System.out.println(getContainer().getFrames());
         if(getContainer().getFrames() == 2) {
             if(populate) {
                 int lasting = (int) (maxLifeSeconds * emissionRatePerSecond);
                 for(int i = 0; i < lasting; i++) {
-                    Container part = createNewParticle();
-                    part.init();
+                    Particle part = createNewParticle();
                     part.update(new TimeSpan((long) (i / emissionRatePerSecond * 1_000_000_000)));
                 }
             }
@@ -106,16 +83,47 @@ public class ParticleEmitterScript extends Script {
         float er = 1f / emissionRate();
         while (timeToCreateParticle >= er) {
             timeToCreateParticle -= er;
-            createNewParticle();
+            createNewParticle().update(new TimeSpan(0));
         }
         timeToCreateParticle += elapsed.getSeconds();
+
+        for(Particle p : particleList) p.update(elapsed);
+        /*
+        IntStream.range(0, particleList.size()).parallel().forEach(i -> {
+            try {
+                particleList.get(i).update(elapsed);
+            } catch (IndexOutOfBoundsException | NullPointerException ignore) {
+            }
+        });
+
+         */
+    }
+
+    @Override
+    public void draw(Graphics graphics) {
+        for(Particle particle : particleList) {
+            if(particle == null) return;
+            graphics.start();
+
+            Transform2f trans = particle.getTransform();
+
+            graphics.translate(trans.getPosition().getX(), trans.getPosition().getY());
+            graphics.rotate(trans.getRotation());
+            graphics.scale(trans.getScale().getX(), trans.getScale().getY());
+            if (textureFile != null) {
+                Vector2i texSize = getTextureSize(textureFile);
+                graphics.scale(texSize.getX(), texSize.getY());
+            }
+            graphics.drawMesh(MeshDrawer.DefaultMeshes.RECTANGLE.getValue(), textureFile, particle.getColor());
+            graphics.end();
+        }
     }
 
     public Vector2f getPoint() {
         return point;
     }
 
-    public ParticleEmitterScript setPoint(Vector2f point) {
+    public ParticleEmitter setPoint(Vector2f point) {
         this.point = point;
         return this;
     }
@@ -124,7 +132,7 @@ public class ParticleEmitterScript extends Script {
         return rectSize;
     }
 
-    public ParticleEmitterScript setRectSize(Vector2f rectSize) {
+    public ParticleEmitter setRectSize(Vector2f rectSize) {
         this.rectSize = rectSize;
         return this;
     }
@@ -133,7 +141,7 @@ public class ParticleEmitterScript extends Script {
         return emissionRatePerSecond;
     }
 
-    public ParticleEmitterScript setEmissionRatePerSecond(float emissionRatePerSecond) {
+    public ParticleEmitter setEmissionRatePerSecond(float emissionRatePerSecond) {
         this.emissionRatePerSecond = emissionRatePerSecond;
         return this;
     }
@@ -142,7 +150,7 @@ public class ParticleEmitterScript extends Script {
         return emissionRateNoise;
     }
 
-    public ParticleEmitterScript setEmissionRateNoise(float emissionRateNoise) {
+    public ParticleEmitter setEmissionRateNoise(float emissionRateNoise) {
         this.emissionRateNoise = emissionRateNoise;
         return this;
     }
@@ -151,7 +159,7 @@ public class ParticleEmitterScript extends Script {
         return maxLifeSeconds;
     }
 
-    public ParticleEmitterScript setMaxLifeSeconds(float maxLifeSeconds) {
+    public ParticleEmitter setMaxLifeSeconds(float maxLifeSeconds) {
         this.maxLifeSeconds = maxLifeSeconds;
         return this;
     }
@@ -160,7 +168,7 @@ public class ParticleEmitterScript extends Script {
         return gravity;
     }
 
-    public ParticleEmitterScript setGravity(Vector2f gravity) {
+    public ParticleEmitter setGravity(Vector2f gravity) {
         this.gravity = gravity;
         return this;
     }
@@ -169,7 +177,7 @@ public class ParticleEmitterScript extends Script {
         return direction;
     }
 
-    public ParticleEmitterScript setDirection(float direction) {
+    public ParticleEmitter setDirection(float direction) {
         this.direction = direction;
         return this;
     }
@@ -178,7 +186,7 @@ public class ParticleEmitterScript extends Script {
         return directionNoise;
     }
 
-    public ParticleEmitterScript setDirectionNoise(float directionNoise) {
+    public ParticleEmitter setDirectionNoise(float directionNoise) {
         this.directionNoise = directionNoise;
         return this;
     }
@@ -187,7 +195,7 @@ public class ParticleEmitterScript extends Script {
         return rotation;
     }
 
-    public ParticleEmitterScript setRotation(float rotation) {
+    public ParticleEmitter setRotation(float rotation) {
         this.rotation = rotation;
         return this;
     }
@@ -196,7 +204,7 @@ public class ParticleEmitterScript extends Script {
         return rotationNoise;
     }
 
-    public ParticleEmitterScript setRotationNoise(float rotationNoise) {
+    public ParticleEmitter setRotationNoise(float rotationNoise) {
         this.rotationNoise = rotationNoise;
         return this;
     }
@@ -205,7 +213,7 @@ public class ParticleEmitterScript extends Script {
         return startColor;
     }
 
-    public ParticleEmitterScript setStartColor(Color startColor) {
+    public ParticleEmitter setStartColor(Color startColor) {
         this.startColor = startColor;
         return this;
     }
@@ -214,7 +222,7 @@ public class ParticleEmitterScript extends Script {
         return endColor;
     }
 
-    public ParticleEmitterScript setEndColor(Color endColor) {
+    public ParticleEmitter setEndColor(Color endColor) {
         this.endColor = endColor;
         return this;
     }
@@ -223,7 +231,7 @@ public class ParticleEmitterScript extends Script {
         return startSpeed;
     }
 
-    public ParticleEmitterScript setStartSpeed(Vector2f startSpeed) {
+    public ParticleEmitter setStartSpeed(Vector2f startSpeed) {
         this.startSpeed = startSpeed;
         return this;
     }
@@ -232,7 +240,7 @@ public class ParticleEmitterScript extends Script {
         return startSpeedNoise;
     }
 
-    public ParticleEmitterScript setStartSpeedNoise(Vector2f startSpeedNoise) {
+    public ParticleEmitter setStartSpeedNoise(Vector2f startSpeedNoise) {
         this.startSpeedNoise = startSpeedNoise;
         return this;
     }
@@ -241,7 +249,7 @@ public class ParticleEmitterScript extends Script {
         return speedNoise;
     }
 
-    public ParticleEmitterScript setSpeedNoise(Vector2f speedNoise) {
+    public ParticleEmitter setSpeedNoise(Vector2f speedNoise) {
         this.speedNoise = speedNoise;
         return this;
     }
@@ -250,7 +258,7 @@ public class ParticleEmitterScript extends Script {
         return size;
     }
 
-    public ParticleEmitterScript setSize(Vector2f size) {
+    public ParticleEmitter setSize(Vector2f size) {
         this.size = size;
         return this;
     }
@@ -259,7 +267,7 @@ public class ParticleEmitterScript extends Script {
         return sizeNoise;
     }
 
-    public ParticleEmitterScript setSizeNoise(Vector2f sizeNoise) {
+    public ParticleEmitter setSizeNoise(Vector2f sizeNoise) {
         this.sizeNoise = sizeNoise;
         return this;
     }
@@ -268,7 +276,7 @@ public class ParticleEmitterScript extends Script {
         return invertColorTransition;
     }
 
-    public ParticleEmitterScript setInvertColorTransition(boolean invertColorTransition) {
+    public ParticleEmitter setInvertColorTransition(boolean invertColorTransition) {
         this.invertColorTransition = invertColorTransition;
         return this;
     }
@@ -277,17 +285,8 @@ public class ParticleEmitterScript extends Script {
         return timeToCreateParticle;
     }
 
-    public ParticleEmitterScript setTimeToCreateParticle(float timeToCreateParticle) {
+    public ParticleEmitter setTimeToCreateParticle(float timeToCreateParticle) {
         this.timeToCreateParticle = timeToCreateParticle;
-        return this;
-    }
-
-    public boolean isInstantiateParticlesInParent() {
-        return instantiateParticlesInParent;
-    }
-
-    public ParticleEmitterScript setInstantiateParticlesInParent(boolean instantiateParticlesInParent) {
-        this.instantiateParticlesInParent = instantiateParticlesInParent;
         return this;
     }
 
@@ -295,7 +294,7 @@ public class ParticleEmitterScript extends Script {
         return populate;
     }
 
-    public ParticleEmitterScript setPopulate(boolean populate) {
+    public ParticleEmitter setPopulate(boolean populate) {
         this.populate = populate;
         return this;
     }
@@ -304,8 +303,17 @@ public class ParticleEmitterScript extends Script {
         return pointNoise;
     }
 
-    public ParticleEmitterScript setPointNoise(Vector2f pointNoise) {
+    public ParticleEmitter setPointNoise(Vector2f pointNoise) {
         this.pointNoise = pointNoise;
+        return this;
+    }
+
+    public List<Particle> getParticleList() {
+        return particleList;
+    }
+
+    public ParticleEmitter setParticleList(List<Particle> particleList) {
+        this.particleList = particleList;
         return this;
     }
 }

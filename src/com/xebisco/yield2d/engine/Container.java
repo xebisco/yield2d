@@ -1,8 +1,8 @@
 package com.xebisco.yield2d.engine;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -34,11 +34,28 @@ public class Container implements Handler, Comparable<Container>, Drawer {
     public void load() {
         frames = 0;
         loaded = true;
-        callOnAllScripts(Script::load);
+        callOnAllScripts(s -> {
+            for(Field field : s.getClass().getDeclaredFields()) {
+                if(field.isAnnotationPresent(InjectScript.class)) {
+                    field.setAccessible(true);
+                    @SuppressWarnings("unchecked") Class<? extends Script> scriptClass = (Class<? extends Script>) field.getType();
+                    try {
+                        field.set(s, getScript(scriptClass, field.getAnnotation(InjectScript.class).value()));
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+            s.load();
+        });
         callOnAllChildren(child -> {
             if (!getToRemove().contains(child))
                 child.load();
         });
+    }
+
+    private void loadScriptAndInjections() {
+
     }
 
     @Override

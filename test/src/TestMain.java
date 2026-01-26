@@ -22,9 +22,20 @@ public class TestMain {
         app.getSceneHandler().setActualScene(new Scene());
 
         Container c = new Container(new Script[]{
-                new ParticleEmitterScript()
-                        .setGravity(new Vector2f(0, 800))
-                        .setSpeedNoise(new Vector2f(200, 200))
+                new MeshDrawer().setExtraScale(new Vector2f(100f, 100f)),
+                new S(),
+                new PhysicsBody().setInertia(10f),
+                new BoxCollider().setSize(new Vector2f(100, 100))
+        });
+        app.getSceneHandler().getActualScene().addChild(c);
+
+        Container particles = new Container(new Script[] {
+                new ParticleEmitter()
+                        .setEmissionRatePerSecond(60f).setPopulate(false),
+                new Follow(c)
+                /*
+                .setGravity(new Vector2f(0, 500))
+                        .setSpeedNoise(new Vector2f(100, 100))
                         .setStartSpeed(new Vector2f(0, 0))
                         .setEmissionRatePerSecond(60f)
                         .setSize(new Vector2f(150, 150))
@@ -34,20 +45,15 @@ public class TestMain {
                         .setSizeNoise(new Vector2f(30, 30))
                         .setMaxLifeSeconds(1f)
                         .setPointNoise(new Vector2f(100, 100))
-                        .setInstantiateParticlesInParent(true)
-                ,
-                new MeshDrawerScript().setExtraScale(new Vector2f(100f, 100f)),
-                new S(),
-                new PhysicsBody().setInertia(10f),
-                new BoxCollider().setSize(new Vector2f(100, 100))
+                        .setPopulate(true),
+                 */
         });
-        app.getSceneHandler().getActualScene().addChild(c);
+        app.getSceneHandler().getActualScene().addChild(particles);
 
         Container c1 = new Container(new Script[]{
-                new MeshDrawerScript().setExtraScale(new Vector2f(100, 10)),
+                new MeshDrawer().setExtraScale(new Vector2f(100, 10)),
                 new PhysicsBody().setType(PhysicsBody.Type.STATIC),
-                new LineCollider().setV1(new Vector2f(-50, 0)).setV2(new Vector2f(50, 0)),
-                new LineCollider().setV1(new Vector2f(50, 0)).setV2(new Vector2f(150, 0))
+                new BoxCollider().setSize(new Vector2f(100, 10))
         });
         c1.getTransform().translate(new Vector2f(0, -100));
 
@@ -57,10 +63,30 @@ public class TestMain {
     }
 
     static class S extends Script {
+        @InjectScript
+        private PhysicsBody pb;
+
         @Override
         public void update(TimeSpan elapsed) {
+            Debug.println(1 / elapsed.getSeconds());
             Vector2f p = getAxisValue2f("HORIZONTAL", "VERTICAL").multiply(100 * elapsed.getSeconds());
-            getScript(PhysicsBody.class).applyLinearImpulse(p);
+            pb.applyLinearImpulse(p);
+        }
+    }
+
+    static class Follow extends Script {
+        private final Container toFollow;
+        @InjectScript
+        private ParticleEmitter pe;
+
+        public Follow(Container toFollow) {
+            this.toFollow = toFollow;
+        }
+
+        @Override
+        public void update(TimeSpan elapsed) {
+            pe.getPoint().setX(toFollow.getTransform().getPosition().getX());
+            pe.getPoint().setY(toFollow.getTransform().getPosition().getY());
         }
     }
 }

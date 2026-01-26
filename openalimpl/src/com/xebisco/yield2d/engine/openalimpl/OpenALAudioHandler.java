@@ -2,7 +2,7 @@ package com.xebisco.yield2d.engine.openalimpl;
 
 import com.xebisco.yield2d.engine.AudioFile;
 import com.xebisco.yield2d.engine.AudioHandler;
-import com.xebisco.yield2d.engine.AudioPlayerScript;
+import com.xebisco.yield2d.engine.AudioPlayer;
 import org.lwjgl.openal.AL;
 import org.lwjgl.openal.ALC;
 import org.lwjgl.openal.ALCCapabilities;
@@ -18,11 +18,11 @@ import static org.lwjgl.openal.ALC10.*;
 
 public class OpenALAudioHandler extends AudioHandler {
 
-    private Map<AudioPlayerScript, Integer> playerIds;
+    private Map<AudioPlayer, Integer> playerIds;
     private Map<AudioFile, Integer> bufferIds;
     private long device, context;
 
-    public int setupPlayer(AudioPlayerScript audioPlayer) {
+    public int setupPlayer(AudioPlayer audioPlayer) {
         Integer alPlayer = playerIds.get(audioPlayer);
         if (alPlayer == null) {
             alPlayer = alGenSources();
@@ -64,24 +64,24 @@ public class OpenALAudioHandler extends AudioHandler {
     }
 
     @Override
-    public void play(AudioPlayerScript audioPlayer) {
+    public void play(AudioPlayer audioPlayer) {
         int pid = setupPlayer(audioPlayer);
         alSourcei(pid, AL_BUFFER, setupBuffer(audioPlayer.getAudioFile()));
         alSourcePlay(pid);
     }
 
     @Override
-    public void pause(AudioPlayerScript audioPlayer) {
+    public void pause(AudioPlayer audioPlayer) {
         alSourcePause(setupPlayer(audioPlayer));
     }
 
     @Override
-    public void stop(AudioPlayerScript audioPlayer) {
+    public void stop(AudioPlayer audioPlayer) {
         alSourceStop(setupPlayer(audioPlayer));
     }
 
     @Override
-    public void destroy(AudioPlayerScript audioPlayer) {
+    public void destroy(AudioPlayer audioPlayer) {
         alDeleteSources(playerIds.get(audioPlayer));
     }
 
@@ -91,12 +91,12 @@ public class OpenALAudioHandler extends AudioHandler {
     }
 
     @Override
-    public boolean isPlaying(AudioPlayerScript audioPlayer) {
+    public boolean isPlaying(AudioPlayer audioPlayer) {
         return alGetSourcei(setupPlayer(audioPlayer), AL_SOURCE_STATE) == AL_PLAYING;
     }
 
     @Override
-    public void update(AudioPlayerScript audioPlayer) {
+    public void update(AudioPlayer audioPlayer) {
         int id = setupPlayer(audioPlayer);
         alSourcei(id, AL_LOOPING, audioPlayer.isLoop() ? AL_TRUE : AL_FALSE);
         alSourcef(id, AL_GAIN, (float) audioPlayer.getGain());

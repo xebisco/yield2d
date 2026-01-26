@@ -1,6 +1,6 @@
 package com.xebisco.yield2d.engine;
 
-public class TextDrawerScript extends Script implements Drawer {
+public class TextDrawer extends Script implements Drawer {
 
     @Editable
     @CantBeNull
@@ -14,10 +14,10 @@ public class TextDrawerScript extends Script implements Drawer {
     @Editable
     private float charactersRotation;
 
-    public TextDrawerScript() {
+    public TextDrawer() {
     }
 
-    public TextDrawerScript(String contents) {
+    public TextDrawer(String contents) {
         this.contents = contents;
     }
 

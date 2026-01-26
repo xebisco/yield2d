@@ -1,6 +1,6 @@
 package com.xebisco.yield2d.engine;
 
-public class CameraScript extends Script {
+public class Camera extends Script {
     @Editable
     private Color background = new Color(.2f, .2f, .2f);
 
@@ -8,7 +8,7 @@ public class CameraScript extends Script {
         return background;
     }
 
-    public CameraScript setBackground(Color background) {
+    public Camera setBackground(Color background) {
         this.background = background;
         return this;
     }

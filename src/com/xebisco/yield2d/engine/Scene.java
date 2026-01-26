@@ -4,7 +4,7 @@ public final class Scene extends Container {
     private Application application;
 
     public Scene() {
-        super(new Script[]{new CameraScript()});
+        super(new Script[]{new Camera()});
     }
 
     @Override
@@ -12,8 +12,8 @@ public final class Scene extends Container {
         setApplication((Application) context);
     }
 
-    public CameraScript getCameraScript() {
-        return getScript(CameraScript.class);
+    public Camera getCameraScript() {
+        return getScript(Camera.class);
     }
 
     public Application getApplication() {

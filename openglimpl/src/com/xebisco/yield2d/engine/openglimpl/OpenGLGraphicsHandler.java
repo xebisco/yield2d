@@ -103,7 +103,7 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
                 start();
                 rotate(charRotation);
                 scale(texture.width, texture.height);
-                drawMeshWithTexture(MeshDrawerScript.DefaultMeshes.RECTANGLE.getValue(), texture, color);
+                drawMeshWithTexture(MeshDrawer.DefaultMeshes.RECTANGLE.getValue(), texture, color);
                 end();
                 translate(texture.width / 2f, 0);
             }
@@ -487,7 +487,7 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
     private JPanel mainPanel;
     private CanvasImpl canvas;
     private final Graphics graphics = new OpenGLGraphics();
-    private CameraScript camera;
+    private Camera camera;
 
     private final WindowProperties windowProperties;
 

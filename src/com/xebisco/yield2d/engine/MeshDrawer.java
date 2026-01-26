@@ -1,6 +1,6 @@
 package com.xebisco.yield2d.engine;
 
-public class MeshDrawerScript extends Script implements Drawer {
+public class MeshDrawer extends Script implements Drawer {
 
     public enum DefaultMeshes {
         RECTANGLE(new Mesh2f(new Vector2f[]{
@@ -42,15 +42,15 @@ public class MeshDrawerScript extends Script implements Drawer {
     @CantBeNull
     private Vector2f extraScale = new Vector2f(1f, 1f);
 
-    public MeshDrawerScript() {
+    public MeshDrawer() {
         this(DefaultMeshes.RECTANGLE.getValue());
     }
 
-    public MeshDrawerScript(Mesh2f mesh) {
+    public MeshDrawer(Mesh2f mesh) {
         this.mesh = mesh;
     }
 
-    public MeshDrawerScript(Mesh2f mesh, Vector2f extraScale) {
+    public MeshDrawer(Mesh2f mesh, Vector2f extraScale) {
         this.mesh = mesh;
         this.extraScale = extraScale;
     }
@@ -71,7 +71,7 @@ public class MeshDrawerScript extends Script implements Drawer {
         return extraScale;
     }
 
-    public MeshDrawerScript setExtraScale(Vector2f extraScale) {
+    public MeshDrawer setExtraScale(Vector2f extraScale) {
         this.extraScale = extraScale;
         return this;
     }
@@ -80,7 +80,7 @@ public class MeshDrawerScript extends Script implements Drawer {
         return color;
     }
 
-    public MeshDrawerScript setColor(Color color) {
+    public MeshDrawer setColor(Color color) {
         this.color = color;
         return this;
     }
@@ -89,7 +89,7 @@ public class MeshDrawerScript extends Script implements Drawer {
         return scaleToTextureSize;
     }
 
-    public MeshDrawerScript setScaleToTextureSize(boolean scaleToTextureSize) {
+    public MeshDrawer setScaleToTextureSize(boolean scaleToTextureSize) {
         this.scaleToTextureSize = scaleToTextureSize;
         return this;
     }
@@ -98,7 +98,7 @@ public class MeshDrawerScript extends Script implements Drawer {
         return textureFile;
     }
 
-    public MeshDrawerScript setTextureFile(TextureFile textureFile) {
+    public MeshDrawer setTextureFile(TextureFile textureFile) {
         this.textureFile = textureFile;
         return this;
     }
@@ -107,7 +107,7 @@ public class MeshDrawerScript extends Script implements Drawer {
         return mesh;
     }
 
-    public MeshDrawerScript setMesh(Mesh2f mesh) {
+    public MeshDrawer setMesh(Mesh2f mesh) {
         this.mesh = mesh;
         return this;
     }
