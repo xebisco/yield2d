@@ -13,7 +13,6 @@ import org.jbox2d.dynamics.contacts.Contact;
 
 public class PhysicsHandler extends ApplicationHandler implements ContactListener {
 
-    private TimeSpan timeStepSpan = new TimeSpan(16_666_667);
     private int positionsSubStepCount = 3, velocitySubStepCount = 8;
     private final World b2World = new World(new Vec2());
     private Vector2f gravity = new Vector2f(0, -10);
@@ -32,7 +31,7 @@ public class PhysicsHandler extends ApplicationHandler implements ContactListene
     @Override
     public void update(TimeSpan elapsed) {
         b2World.setGravity(Utils.toB2Vec2(gravity));
-        b2World.step(timeStepSpan.getSeconds(), velocitySubStepCount, positionsSubStepCount);
+        b2World.step(elapsed.getSeconds(), velocitySubStepCount, positionsSubStepCount);
     }
 
     @Override
@@ -91,14 +90,6 @@ public class PhysicsHandler extends ApplicationHandler implements ContactListene
 
     }
 
-    public TimeSpan getTimeStepSpan() {
-        return timeStepSpan;
-    }
-
-    public PhysicsHandler setTimeStepSpan(TimeSpan timeStepSpan) {
-        this.timeStepSpan = timeStepSpan;
-        return this;
-    }
 
     public int getPositionsSubStepCount() {
         return positionsSubStepCount;
