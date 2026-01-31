@@ -39,6 +39,10 @@ public class AudioPlayer extends Script {
         getApplication().getAudioHandler().destroy(this);
     }
 
+    public boolean isPlaying() {
+        return getApplication().getAudioHandler().isPlaying(this);
+    }
+
     public AudioFile getAudioFile() {
         return audioFile;
     }
