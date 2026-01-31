@@ -54,10 +54,10 @@ public class AWTInputHandler extends InputHandler {
     public ImmutableVector2f getMouse() {
         float mx = 0, my = 0;
         if (getApplication().getGraphicsHandler() instanceof OpenGLGraphicsHandler gh) {
-            Point p = gh.getMainPanel().getMousePosition();
+            Point p = gh.getCanvas().getMousePosition();
             if (p != null) {
-                mx = p.x / (gh.getMainPanel().getWidth() / 2f) - 1f;
-                my = 1f - p.y / (gh.getMainPanel().getHeight() / 2f);
+                mx = p.x / (gh.getCanvas().getWidth() / 2f) - 1f;
+                my = 1f - p.y / (gh.getCanvas().getHeight() / 2f);
             }
         } else {
             Debug.println("WARNING: Could not link AWTInputHandler.");
@@ -218,10 +218,10 @@ public class AWTInputHandler extends InputHandler {
     @Override
     public void init() {
         if (getApplication().getGraphicsHandler() instanceof OpenGLGraphicsHandler gh) {
-            gh.getMainPanel().addKeyListener(new AWTKeyAdapter());
+            gh.getCanvas().addKeyListener(new AWTKeyAdapter());
             AWTMouseAdapter ma = new AWTMouseAdapter();
-            gh.getMainPanel().addMouseListener(ma);
-            gh.getMainPanel().addMouseWheelListener(ma);
+            gh.getCanvas().addMouseListener(ma);
+            gh.getCanvas().addMouseWheelListener(ma);
         } else {
             Debug.println("WARNING: Could not link AWTInputHandler.");
         }
