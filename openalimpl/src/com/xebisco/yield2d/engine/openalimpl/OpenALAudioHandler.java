@@ -100,7 +100,7 @@ public class OpenALAudioHandler extends AudioHandler {
         int id = setupPlayer(audioPlayer);
         alSourcei(id, AL_LOOPING, audioPlayer.isLoop() ? AL_TRUE : AL_FALSE);
         alSourcef(id, AL_GAIN, (float) audioPlayer.getGain());
-        alSourcef(id, AL_PITCH, (float) audioPlayer.getPitch());
+        alSourcef(id, AL_PITCH, (float) Math.pow(2.0, audioPlayer.getPitch() / 12.0));
         float pan = (float) (audioPlayer.getPan() * 0.5f); // 0.5 = sin(30') for a +/- 30 degree arc
         alSourcei(id, AL_SOURCE_RELATIVE, 1);
         alSource3f(id, AL_POSITION, pan, 0, (float) -Math.sqrt(1.0f - pan * pan));
