@@ -22,7 +22,7 @@ public abstract class Collider extends Script {
     private String collisionCategory = "default";
 
     @Editable
-    private String[] maskCategories = new String[0];
+    private List<String> maskCategories = new ArrayList<>();
 
     public abstract Shape shape();
 
@@ -119,11 +119,11 @@ public abstract class Collider extends Script {
         return this;
     }
 
-    public String[] getMaskCategories() {
+    public List<String> getMaskCategories() {
         return maskCategories;
     }
 
-    public Collider setMaskCategories(String[] maskCategories) {
+    public Collider setMaskCategories(List<String> maskCategories) {
         this.maskCategories = maskCategories;
         return this;
     }

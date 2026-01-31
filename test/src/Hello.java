@@ -29,6 +29,8 @@ public class Hello {
                     Random rd = new Random();
                     @Override
                     public void update(TimeSpan elapsed) {
+                        getTransform().getPosition().setX(getApplication().getInputHandler().getMouse().getX() * 1280 / 2);
+                        getTransform().getPosition().setY(getApplication().getInputHandler().getMouse().getY() * 720 / 2);
                         getTransform().scale(getAxisValue2f("HORIZONTAL", "VERTICAL").multiply(.1f));
                         getTransform().rotate(1f);
                         td.setCharactersRotation(td.getCharactersRotation() - 1);

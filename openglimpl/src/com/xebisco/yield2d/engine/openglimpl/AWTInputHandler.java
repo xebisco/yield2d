@@ -1,20 +1,16 @@
 package com.xebisco.yield2d.engine.openglimpl;
 
-import com.xebisco.yield2d.engine.Debug;
-import com.xebisco.yield2d.engine.InputHandler;
-import com.xebisco.yield2d.engine.Key;
-import com.xebisco.yield2d.engine.TimeSpan;
+import com.xebisco.yield2d.engine.*;
 
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.awt.event.*;
 import java.util.HashSet;
 import java.util.Set;
 
 public class AWTInputHandler extends InputHandler {
 
     private final Set<Key> pressedKeys = new HashSet<>();
+    private int mouseWheelUpTimer, mouseWheelDownTimer;
 
     class AWTKeyAdapter extends KeyAdapter {
         @Override
@@ -38,11 +34,35 @@ public class AWTInputHandler extends InputHandler {
         public void mouseReleased(MouseEvent e) {
             pressedKeys.remove(fromAWTMouseButtonToYieldKey(e.getButton()));
         }
+
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            if (e.getWheelRotation() < 0) {
+                mouseWheelUpTimer = 2;
+            } else {
+                mouseWheelDownTimer = 2;
+            }
+        }
     }
 
     @Override
     public boolean isKeyPressed(Key key) {
         return pressedKeys.contains(key);
+    }
+
+    @Override
+    public ImmutableVector2f getMouse() {
+        float mx = 0, my = 0;
+        if (getApplication().getGraphicsHandler() instanceof OpenGLGraphicsHandler gh) {
+            Point p = gh.getMainPanel().getMousePosition();
+            if (p != null) {
+                mx = p.x / (gh.getMainPanel().getWidth() / 2f) - 1f;
+                my = 1f - p.y / (gh.getMainPanel().getHeight() / 2f);
+            }
+        } else {
+            Debug.println("WARNING: Could not link AWTInputHandler.");
+        }
+        return new ImmutableVector2f(mx, my);
     }
 
     public static Key fromAWTKeyCodeToYieldKey(int keyCode) {
@@ -179,9 +199,13 @@ public class AWTInputHandler extends InputHandler {
         };
     }
 
-    public static Key fromAWTMouseButtonToYieldKey(int keyCode) {
-        return switch (keyCode) {
-            case KeyEvent.VK_ENTER -> Key.KB_ENTER;
+    public static Key fromAWTMouseButtonToYieldKey(int button) {
+        return switch (button) {
+            case 1 -> Key.MOUSE_1;
+            case 2 -> Key.MOUSE_2;
+            case 3 -> Key.MOUSE_3;
+            case 4 -> Key.MOUSE_4;
+            case 5 -> Key.MOUSE_5;
             default -> Key.UNDEFINED;
         };
     }
@@ -195,6 +219,9 @@ public class AWTInputHandler extends InputHandler {
     public void init() {
         if (getApplication().getGraphicsHandler() instanceof OpenGLGraphicsHandler gh) {
             gh.getMainPanel().addKeyListener(new AWTKeyAdapter());
+            AWTMouseAdapter ma = new AWTMouseAdapter();
+            gh.getMainPanel().addMouseListener(ma);
+            gh.getMainPanel().addMouseWheelListener(ma);
         } else {
             Debug.println("WARNING: Could not link AWTInputHandler.");
         }
@@ -202,7 +229,19 @@ public class AWTInputHandler extends InputHandler {
 
     @Override
     public void update(TimeSpan elapsed) {
+        mouseWheelUpTimer--;
+        mouseWheelDownTimer--;
 
+        if (mouseWheelDownTimer < 0) {
+            pressedKeys.remove(Key.MOUSE_WDOWN);
+        } else {
+            pressedKeys.add(Key.MOUSE_WDOWN);
+        }
+        if (mouseWheelUpTimer < 0) {
+            pressedKeys.remove(Key.MOUSE_WUP);
+        } else {
+            pressedKeys.add(Key.MOUSE_WUP);
+        }
     }
 
     @Override
