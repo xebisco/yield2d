@@ -18,6 +18,10 @@ public final class Utils {
     private Utils() {
     }
 
+    public static float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     public static float randomFloat(float min, float max) {
         if (min == max) return min;
         return RANDOM.nextFloat(min, max);

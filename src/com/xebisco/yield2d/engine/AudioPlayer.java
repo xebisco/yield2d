@@ -6,7 +6,7 @@ public class AudioPlayer extends Script {
     private AudioFile audioFile;
 
     @Editable
-    private double gain = 1, pan = 0;
+    private double gain = 1, pan = 0, pitch;
 
     @Editable
     private boolean playOnInit, loop;
@@ -82,6 +82,15 @@ public class AudioPlayer extends Script {
 
     public AudioPlayer setLoop(boolean loop) {
         this.loop = loop;
+        return this;
+    }
+
+    public double getPitch() {
+        return pitch;
+    }
+
+    public AudioPlayer setPitch(double pitch) {
+        this.pitch = pitch;
         return this;
     }
 }
