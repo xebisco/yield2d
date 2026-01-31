@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.lwjgl.openal.AL10.*;
+import static org.lwjgl.openal.AL11.AL_SEC_OFFSET;
 import static org.lwjgl.openal.ALC10.*;
 
 public class OpenALAudioHandler extends AudioHandler {
@@ -88,6 +89,16 @@ public class OpenALAudioHandler extends AudioHandler {
     @Override
     public void destroy(AudioFile audioFile) {
         alDeleteBuffers(bufferIds.get(audioFile));
+    }
+
+    @Override
+    public void setSecondsOffset(AudioPlayer audioPlayer, float offset) {
+        alSourcef(setupPlayer(audioPlayer), AL_SEC_OFFSET, offset);
+    }
+
+    @Override
+    public float getSecondsOffset(AudioPlayer audioPlayer) {
+        return alGetSourcef(setupPlayer(audioPlayer), AL_SEC_OFFSET);
     }
 
     @Override

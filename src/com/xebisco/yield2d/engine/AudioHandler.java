@@ -7,6 +7,8 @@ public abstract class AudioHandler extends ApplicationHandler {
     public abstract void stop(AudioPlayer audioPlayer);
     public abstract void destroy(AudioPlayer audioPlayer);
     public abstract void destroy(AudioFile audioFile);
+    public abstract void setSecondsOffset(AudioPlayer audioPlayer, float offset);
+    public abstract float getSecondsOffset(AudioPlayer audioPlayer);
     public abstract boolean isPlaying(AudioPlayer audioPlayer);
     public abstract void update(AudioPlayer audioPlayer);
 

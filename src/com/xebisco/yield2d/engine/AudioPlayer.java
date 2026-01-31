@@ -39,6 +39,14 @@ public class AudioPlayer extends Script {
         getApplication().getAudioHandler().destroy(this);
     }
 
+    public float getSecondsOffset() {
+        return getApplication().getAudioHandler().getSecondsOffset(this);
+    }
+
+    public void setSecondsOffset(float offset) {
+        getApplication().getAudioHandler().setSecondsOffset(this, offset);
+    }
+
     public boolean isPlaying() {
         return getApplication().getAudioHandler().isPlaying(this);
     }
