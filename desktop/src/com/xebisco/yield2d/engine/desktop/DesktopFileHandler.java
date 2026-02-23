@@ -26,7 +26,7 @@ public class DesktopFileHandler extends FileHandler {
     @Override
     public InputStream openInputStream(String pathname) {
         if (useClasspath) {
-            return Objects.requireNonNull(getClass().getResourceAsStream(File.separator + pathname));
+            return Objects.requireNonNull(getClass().getResourceAsStream("/" + pathname));
         } else {
             try {
                 return new FileInputStream(pathname);

@@ -1,6 +1,9 @@
 package com.xebisco.yield2d.engine.physics;
 
-import com.xebisco.yield2d.engine.*;
+import com.xebisco.yield2d.engine.CantBeNull;
+import com.xebisco.yield2d.engine.Editable;
+import com.xebisco.yield2d.engine.Utils;
+import com.xebisco.yield2d.engine.Vector2f;
 import org.jbox2d.collision.shapes.CircleShape;
 import org.jbox2d.collision.shapes.Shape;
 

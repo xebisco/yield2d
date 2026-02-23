@@ -2,7 +2,6 @@ package com.xebisco.yield2d.engine;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.Objects;
 
 public class TextureFile extends File {
 

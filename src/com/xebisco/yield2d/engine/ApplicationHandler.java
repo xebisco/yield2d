@@ -3,6 +3,9 @@ package com.xebisco.yield2d.engine;
 public abstract class ApplicationHandler implements Handler {
     private Application application;
 
+    public void render() {
+    }
+
     @Override
     public final void setContext(Object context) {
         setApplication((Application) context);

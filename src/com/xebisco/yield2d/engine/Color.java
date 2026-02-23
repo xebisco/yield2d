@@ -35,20 +35,24 @@ public class Color {
         return a | r | g | b;
     }
 
-    public void setRed(float red) {
-        this.red = Math.min(1, Math.max(0, red));
+    public Color setRed(float red) {
+        this.red = red;
+        return this;
     }
 
-    public void setGreen(float green) {
-        this.green = Math.min(1, Math.max(0, green));
+    public Color setGreen(float green) {
+        this.green = green;
+        return this;
     }
 
-    public void setBlue(float blue) {
-        this.blue = Math.min(1, Math.max(0, blue));
+    public Color setBlue(float blue) {
+        this.blue = blue;
+        return this;
     }
 
-    public void setAlpha(float alpha) {
-        this.alpha = Math.min(1, Math.max(0, alpha));
+    public Color setAlpha(float alpha) {
+        this.alpha = alpha;
+        return this;
     }
 
     public void set(float r, float g, float b, float a) {

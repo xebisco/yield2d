@@ -5,5 +5,7 @@ public interface Handler {
     void load();
     void init();
     void update(TimeSpan elapsed);
+
+    void fixedUpdate(TimeSpan elapsed);
     void destroy();
 }

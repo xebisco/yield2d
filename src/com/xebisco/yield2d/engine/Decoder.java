@@ -9,10 +9,10 @@ import java.util.Base64;
 public final class Decoder {
      /** Read the object from Base64 string. */
     public <T extends Serializable> T decodeObject(EncodedObject<T> e) throws IOException,ClassNotFoundException {
-        byte[] data = Base64.getDecoder().decode(e.value());
+        byte[] data = Base64.getDecoder().decode(e.getValue());
         ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
         Object o = ois.readObject();
         ois.close();
-        return e.type().cast(o);
+        return e.getType().cast(o);
     }
 }

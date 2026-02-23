@@ -1,10 +1,8 @@
 package com.xebisco.yield2d.engine;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.lang.reflect.Modifier;
+import java.util.*;
 
 public class Tweener extends Script {
 
@@ -36,7 +34,8 @@ public class Tweener extends Script {
     }
 
     private TweeningInfo playingInfo;
-    private Set<TweeningInfo> loadedInfos = new HashSet<>();
+    private Set<TweeningInfo> loadedInfos = new HashSet<>(), toLoad = new HashSet<>();
+    private Set<TweeningInfo.TweeningPoint> zeroDuration = new HashSet<>();
 
     private float time;
     private Map<TweeningInfo.TweeningPoint, PointMod> scriptObjectsMap;
@@ -49,46 +48,87 @@ public class Tweener extends Script {
         scriptObjectsMap = new HashMap<>();
     }
 
+    private static <T> List<Field> getAllFields(T t) {
+        List<Field> fields = new ArrayList<>();
+        Class<?> clazz = t.getClass();
+        while (clazz != Object.class) {
+            fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
+            clazz = clazz.getSuperclass();
+        }
+        fields.removeIf(f -> Modifier.isStatic(f.getModifiers()));
+        return fields;
+    }
+
     @Override
     public void update(TimeSpan elapsed) {
+        toLoad.removeIf(info -> {
+            loadInfo(info);
+            return true;
+        });
         if (playingInfo != null) {
-            playingInfo.getTweeningPoints().stream().parallel().forEach(point -> {
+            float length = 0;
+            for (TweeningInfo.TweeningPoint point : playingInfo.getTweeningPoints()) {
+                length = Math.max(length, point.getStartTime() + point.getDurationValue());
+                if (point.getScriptClass() == null) continue;
                 try {
                     PointMod mod = scriptObjectsMap.get(point);
-                    if (time >= point.startTime() && time <= point.startTime() + point.durationValue()) {
+                    if (point.getDurationValue() == 0 && time >= point.getStartTime()) {
+                        if (!zeroDuration.contains(point)) {
+                            zeroDuration.add(point);
+                            setVarValue(point.getFinalValue(), mod);
+                            mod.setStartedValue(null);
+                        }
+                    } else if (time >= point.getStartTime() && time <= point.getStartTime() + point.getDurationValue()) {
                         if (mod.getStartedValue() == null)
                             mod.setStartedValue(Float.parseFloat(mod.getVariableField().get(mod.getScriptObject()).toString()));
-                        setVarValue(point.easing().call(point.easingEquations(), time - point.startTime(), mod.getStartedValue(), point.finalValue() - mod.getStartedValue(), point.durationValue()), mod);
-                    } else if (time >= point.startTime() && mod.getStartedValue() != null) {
-                        setVarValue(point.easing().call(point.easingEquations(), point.durationValue(), mod.getStartedValue(), point.finalValue() - mod.getStartedValue(), point.durationValue()), mod);
+                        setVarValue(point.getEasing().call(point.getEasingEquations(), time - point.getStartTime(), mod.getStartedValue(), point.getFinalValue(), point.getDurationValue()), mod);
+                    } else if (time >= point.getStartTime() && mod.getStartedValue() != null) {
+                        setVarValue(point.getEasing().call(point.getEasingEquations(), point.getDurationValue(), mod.getStartedValue(), point.getFinalValue(), point.getDurationValue()), mod);
                         mod.setStartedValue(null);
                     }
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
-            });
+            }
             time += elapsed.getSeconds();
+            if (time > length + elapsed.getSeconds() && playingInfo.isLoop()) {
+                setPlayingInfo(playingInfo);
+            }
         }
+    }
+
+    private Object getO(Object script, Field actField, Field field) {
+        if (script == null || script.getClass().isPrimitive() || (actField != null && actField.getType().isPrimitive()))
+            return null;
+        try {
+            field.get(script);
+            return script;
+        } catch (Exception e) {
+            for (Field f : getAllFields(script)) {
+                try {
+                    f.setAccessible(true);
+                    Object o = getO(f.get(script), f, field);
+                    if (o != null)
+                        return o;
+                } catch (IllegalAccessException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        }
+        return null;
     }
 
     private void loadInfo(TweeningInfo info) {
-        try {
-            for (TweeningInfo.TweeningPoint point : info.getTweeningPoints()) {
-                Script script = getScript(point.scriptClass(), point.scriptIndex());
-                Field field = script.getClass().getDeclaredField(point.varName());
+        for (TweeningInfo.TweeningPoint point : info.getTweeningPoints()) {
+            if (point.getScriptClass() != null) {
+                Script script = getScript(point.getScriptClass(), point.getScriptIndex());
+                Field field = point.getField();
                 field.setAccessible(true);
-                scriptObjectsMap.put(point, new PointMod(script, field));
+                Object so = getO(script, null, field);
+                scriptObjectsMap.put(point, new PointMod(so, field));
             }
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
         }
         loadedInfos.add(info);
-    }
-
-    public void play(TweeningInfo info) {
-        if(!loadedInfos.contains(info)) loadInfo(info);
-        playingInfo = info;
-        time = 0;
     }
 
     private static void setVarValue(Float value, PointMod mod) throws IllegalAccessException {
@@ -110,7 +150,12 @@ public class Tweener extends Script {
     }
 
     public Tweener setPlayingInfo(TweeningInfo playingInfo) {
+        if (!loadedInfos.contains(playingInfo)) {
+            toLoad.add(playingInfo);
+        }
         this.playingInfo = playingInfo;
+        zeroDuration.clear();
+        time = 0;
         return this;
     }
 

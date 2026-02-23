@@ -34,13 +34,20 @@ public class MeshDrawer extends Script implements Drawer {
     @Editable
     private TextureFile textureFile;
     @Editable
-    private boolean scaleToTextureSize;
+    private TextureAtlasFile.Clip[] clips;
+    @Editable
+    private boolean scaleToTextureSize = true;
     @Editable
     @CantBeNull
     private Color color = new Color(1f, 1f, 1f, 1f);
     @Editable
     @CantBeNull
     private Vector2f extraScale = new Vector2f(1f, 1f);
+    @Editable
+    @CantBeNull
+    private Center center = Center.MIDDLE;
+
+    private int clipIndex;
 
     public MeshDrawer() {
         this(DefaultMeshes.RECTANGLE.getValue());
@@ -57,14 +64,24 @@ public class MeshDrawer extends Script implements Drawer {
 
     @Override
     public void draw(Graphics graphics) {
+        graphics.start();
         graphics.scale(extraScale.getX(), extraScale.getY());
-        if(scaleToTextureSize && textureFile != null) {
-            Vector2i texSize = getTextureSize(textureFile);
+
+        TextureFile tx = textureFile;
+
+        if (clips != null) {
+            tx = clips[clipIndex].getTexture();
+        }
+
+        if (scaleToTextureSize && tx != null) {
+            Vector2i texSize = getTextureSize(tx);
             graphics.scale(texSize.getX(), texSize.getY());
         }
-        if(textureFile == null)
+        adjustCenter(graphics, new Vector2f(1, 1), center);
+        if (tx == null)
         graphics.drawMesh(mesh, color);
-        else graphics.drawMesh(mesh, textureFile, color);
+        else graphics.drawMesh(mesh, tx, color);
+        graphics.end();
     }
 
     public Vector2f getExtraScale() {
@@ -109,6 +126,33 @@ public class MeshDrawer extends Script implements Drawer {
 
     public MeshDrawer setMesh(Mesh2f mesh) {
         this.mesh = mesh;
+        return this;
+    }
+
+    public TextureAtlasFile.Clip[] getClips() {
+        return clips;
+    }
+
+    public MeshDrawer setClips(TextureAtlasFile.Clip[] clips) {
+        this.clips = clips;
+        return this;
+    }
+
+    public int getClipIndex() {
+        return clipIndex;
+    }
+
+    public MeshDrawer setClipIndex(int clipIndex) {
+        this.clipIndex = clipIndex;
+        return this;
+    }
+
+    public Center getCenter() {
+        return center;
+    }
+
+    public MeshDrawer setCenter(Center center) {
+        this.center = center;
         return this;
     }
 }

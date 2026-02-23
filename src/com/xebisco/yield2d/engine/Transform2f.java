@@ -62,6 +62,11 @@ public final class Transform2f {
         return scale;
     }
 
+    public Transform2f setRotation(float rotation) {
+        this.rotation = rotation;
+        return this;
+    }
+
     public float getRotation() {
         return rotation;
     }

@@ -23,7 +23,9 @@ public class TextDrawer extends Script implements Drawer {
 
     @Override
     public void draw(Graphics g) {
+        g.start();
         g.drawText(contents, fontFile, color, charactersRotation);
+        g.end();
     }
 
     public String getContents() {

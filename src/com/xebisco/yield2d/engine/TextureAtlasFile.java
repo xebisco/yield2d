@@ -3,13 +3,12 @@ package com.xebisco.yield2d.engine;
 import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.util.*;
-import java.util.regex.Matcher;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 public class TextureAtlasFile extends File {
 
-    public final static Pattern CLIPS_PATTERN = Pattern.compile("^(.*?)_([0-9]+)$");
+    public final static Pattern CLIPS_PATTERN = Pattern.compile("^(.*?)([0-9]+)$");
 
     public class Clip implements Serializable {
         private final int x, y, width, height;
@@ -46,35 +45,39 @@ public class TextureAtlasFile extends File {
             this.texture = texture;
         }
     }
-    public record TextureAtlas(String imagePath, TextureFile.TextureFilter filter, HashMap<String, Clip> clipMap) implements Serializable {
-        public TextureFile getTexture(String key) {
-            return clipMap().get(key).getTexture();
-        }
 
-        public TextureFile[] getTextures(String beginning) {
-            Map<Integer, TextureFile> textures = new HashMap<>();
-            Matcher m = CLIPS_PATTERN.matcher("");
-            for(String k : clipMap.keySet().stream().sorted(Comparator.reverseOrder()).toList()) {
-                m.reset(k);
-                if(m.find() && m.group(1).equals(beginning)) {
-                    textures.put(Integer.parseInt(m.group(2)), getTexture(k));
-                }
-            }
-
-            return textures.values().toArray(new TextureFile[0]);
-        }
+    TextureAtlasFile(String pathname) {
+        super(pathname);
     }
 
     private InputStream inputStream;
     private TextureAtlas textureAtlas;
 
-    public TextureAtlasFile(String pathname) {
-        super(pathname);
-    }
+    public class TextureAtlas implements Serializable {
 
-    public TextureAtlasFile(TextureAtlas textureAtlas) {
-        super("");
-        this.textureAtlas = textureAtlas;
+        private final String imagePath;
+        private final HashMap<String, Clip[]> clipMap;
+
+        public TextureAtlas(String imagePath, HashMap<String, Clip[]> clipMap) {
+            this.imagePath = imagePath;
+            this.clipMap = clipMap;
+        }
+
+        public TextureFile getTexture(String key) {
+            return getClipMap().get(key)[0].getTexture();
+        }
+
+        public Clip[] getClips(String anim) {
+            return getClipMap().get(anim);
+        }
+
+        public String getImagePath() {
+            return imagePath;
+        }
+
+        public HashMap<String, Clip[]> getClipMap() {
+            return clipMap;
+        }
     }
 
     public TextureAtlas getTextureAtlasInfo() {

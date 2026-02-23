@@ -20,16 +20,21 @@ public class PhysicsHandler extends ApplicationHandler implements ContactListene
 
     @Override
     public void load() {
-
-    }
-
-    @Override
-    public void init() {
         b2World.setContactListener(this);
     }
 
     @Override
+    public void init() {
+
+    }
+
+    @Override
     public void update(TimeSpan elapsed) {
+
+    }
+
+    @Override
+    public void fixedUpdate(TimeSpan elapsed) {
         b2World.setGravity(Utils.toB2Vec2(gravity));
         b2World.step(elapsed.getSeconds(), velocitySubStepCount, positionsSubStepCount);
     }
@@ -43,7 +48,10 @@ public class PhysicsHandler extends ApplicationHandler implements ContactListene
         Distance.DistanceProxy p = new Distance.DistanceProxy();
         int i = 0;
         for (Script s : c.getScripts()) {
-            if (s instanceof Collider cl) p.set(cl.shape(), i++);
+            if (s instanceof Collider) {
+                Collider cl = (Collider) s;
+                p.set(cl.shape(), i++);
+            }
         }
         return p;
     }
@@ -66,7 +74,8 @@ public class PhysicsHandler extends ApplicationHandler implements ContactListene
 
     @Override
     public void beginContact(Contact contact) {
-        if (contact.m_fixtureA.m_userData instanceof Collider cA && contact.m_fixtureB.m_userData instanceof Collider cB) {
+        if (contact.m_fixtureA.m_userData instanceof Collider && contact.m_fixtureB.m_userData instanceof Collider) {
+            Collider cA = (Collider) contact.m_fixtureA.m_userData, cB = (Collider) contact.m_fixtureB.m_userData;
             cA.getContainer().callOnAllScripts(script -> script.onCollisionEnter(cB));
             cB.getContainer().callOnAllScripts(script -> script.onCollisionEnter(cA));
         }
@@ -74,7 +83,8 @@ public class PhysicsHandler extends ApplicationHandler implements ContactListene
 
     @Override
     public void endContact(Contact contact) {
-        if (contact.m_fixtureA.m_userData instanceof Collider cA && contact.m_fixtureB.m_userData instanceof Collider cB) {
+        if (contact.m_fixtureA.m_userData instanceof Collider && contact.m_fixtureB.m_userData instanceof Collider) {
+            Collider cA = (Collider) contact.m_fixtureA.m_userData, cB = (Collider) contact.m_fixtureB.m_userData;
             cA.getContainer().callOnAllScripts(script -> script.onCollisionExit(cB));
             cB.getContainer().callOnAllScripts(script -> script.onCollisionExit(cA));
         }

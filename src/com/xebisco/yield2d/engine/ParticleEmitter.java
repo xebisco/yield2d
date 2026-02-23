@@ -113,6 +113,7 @@ public class ParticleEmitter extends Script implements Drawer {
 
     @Override
     public void draw(Graphics graphics) {
+        graphics.start();
         for (Particle particle : particleList) {
             if (particle == null) continue;
             graphics.start();
@@ -126,6 +127,7 @@ public class ParticleEmitter extends Script implements Drawer {
             graphics.drawMesh(MeshDrawer.DefaultMeshes.RECTANGLE.getValue(), textureFile, particle.getColor());
             graphics.end();
         }
+        graphics.end();
     }
 
     public Vector2f getPoint() {

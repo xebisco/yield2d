@@ -28,6 +28,11 @@ public abstract class AudioHandler extends ApplicationHandler {
     }
 
     @Override
+    public void fixedUpdate(TimeSpan elapsed) {
+
+    }
+
+    @Override
     public void destroy() {
 
     }

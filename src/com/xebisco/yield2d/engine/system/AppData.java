@@ -7,6 +7,7 @@ import net.harawata.appdirs.AppDirsFactory;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -37,11 +38,11 @@ public class AppData {
 
     private DataPackage getPkgDat(String pkg, boolean searchOldRevs) {
         long rev = getRevision();
+        if (rev < 0) throw new IllegalStateException("REVISION LESS THAN ZERO");
         DataPackage dataPackage;
         do {
-            if (rev < 0) throw new IllegalStateException("REVISION LESS THAN ZERO");
             dataPackage = packageMap.get(new Pair<>(pkg, rev--));
-        } while (dataPackage == null && searchOldRevs);
+        } while (dataPackage == null && searchOldRevs && rev >= 0);
         if (dataPackage == null) throw new IllegalStateException("Could not find package");
         return dataPackage;
     }
@@ -75,15 +76,19 @@ public class AppData {
 
     public void addPackage(String pkg, Serializable obj, Class<?> clazz) {
         removeSameRevisionPackage(pkg);
-        DataPackage dataPackage = new DataPackage(RAND.nextInt(1000, Integer.MAX_VALUE), revision, clazz);
+        DataPackage dataPackage = new DataPackage(ThreadLocalRandom.current().nextInt(1000, Integer.MAX_VALUE), revision, clazz);
         packageMap.put(new Pair<>(pkg, getRevision()), dataPackage);
         packageToDisk(dataPackage, obj);
         savePackageMap();
     }
 
     private void packageToDisk(DataPackage dataPackage, Serializable obj) {
-        File file = new File(getwDir(), "n" + dataPackage.id() + ".yield_package");
+        File file = new File(getwDir(), "n" + dataPackage.getId() + ".yield_package");
 
+        saveGZipObject(obj, file);
+    }
+
+    private void saveGZipObject(Serializable obj, File file) {
         try (FileOutputStream fos = new FileOutputStream(file);
              GZIPOutputStream gzos = new GZIPOutputStream(fos);
              BufferedOutputStream bos = new BufferedOutputStream(gzos);
@@ -100,13 +105,13 @@ public class AppData {
     }
 
     private void removePackage(String pkg) {
-        File file = new File(getwDir(), "n" + packageMap.get(new Pair<>(pkg, getRevision())).id() + ".yield_package");
+        File file = new File(getwDir(), "n" + packageMap.get(new Pair<>(pkg, getRevision())).getId() + ".yield_package");
         file.delete();
     }
 
 
     private Object packageFromDisk(DataPackage dataPackage) {
-        File file = new File(getwDir(), "n" + dataPackage.id() + ".yield_package");
+        File file = new File(getwDir(), "n" + dataPackage.getId() + ".yield_package");
         try (FileInputStream fis = new FileInputStream(file);
              GZIPInputStream gzis = new GZIPInputStream(fis);
              BufferedInputStream bis = new BufferedInputStream(gzis);
@@ -138,15 +143,7 @@ public class AppData {
     private void savePackageMap() {
         File file = new File(getwDir(), "pkgmap");
 
-        try (FileOutputStream fos = new FileOutputStream(file);
-             GZIPOutputStream gzos = new GZIPOutputStream(fos);
-             BufferedOutputStream bos = new BufferedOutputStream(gzos);
-             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-            oos.writeObject(packageMap);
-            oos.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        saveGZipObject(packageMap, file);
     }
 
     public DataPackage searchPackage() {

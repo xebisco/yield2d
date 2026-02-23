@@ -27,7 +27,7 @@ public class PhysicsBody extends Script {
     @Editable
     private boolean enableSleep, fixedRotation, bullet, enabled = true;
 
-    private Body b2Body;
+    private volatile Body b2Body;
 
     @Override
     public void load() {
@@ -40,9 +40,13 @@ public class PhysicsBody extends Script {
     }
 
     @Override
-    public void update(TimeSpan elapsed) {
+    public void fixedUpdate(TimeSpan elapsed) {
         updateBody();
         updateFixtures();
+    }
+
+    @Override
+    public void update(TimeSpan elapsed) {
         updateTransform();
     }
 
@@ -102,7 +106,10 @@ public class PhysicsBody extends Script {
 
     private void updateFixtures() {
         for (Fixture f = b2Body.getFixtureList(); f != null; f = f.getNext()) {
-            if (f.m_userData instanceof Collider c) c.updateFixture(f);
+            if (f.m_userData instanceof Collider) {
+                Collider c = (Collider) f.m_userData;
+                c.updateFixture(f);
+            }
         }
     }
 

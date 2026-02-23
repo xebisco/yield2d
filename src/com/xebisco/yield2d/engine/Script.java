@@ -21,6 +21,11 @@ public abstract class Script implements Handler {
     }
 
     @Override
+    public void fixedUpdate(TimeSpan elapsed) {
+
+    }
+
+    @Override
     public void destroy() {
 
     }
@@ -66,8 +71,8 @@ public abstract class Script implements Handler {
         return getContainer().getScript(scriptType);
     }
 
-    public final void loadTextureAtlas(TextureAtlasFile textureAtlasFile) {
-        getApplication().loadTextureAtlas(textureAtlasFile);
+    public final void loadTextureAtlas(String textureAtlasFilePath) {
+        getApplication().loadTextureAtlas(textureAtlasFilePath);
     }
 
     public final Scene getScene() {

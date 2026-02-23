@@ -1,64 +1,15 @@
 package com.xebisco.yield2d.engine;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class TweeningInfo implements Serializable {
-
-    public enum Easing {
-        LINEAR(null),
-        EASE_IN(new Object() {
-            Method eval() {
-                try {
-                    return EasingEquations.class.getDeclaredMethod("easeIn", float.class, float.class, float.class, float.class);
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }.eval()),
-        EASE_OUT(new Object() {
-            Method eval() {
-                try {
-                    return EasingEquations.class.getDeclaredMethod("easeOut", float.class, float.class, float.class, float.class);
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }.eval()),
-        EASE_IN_OUT(new Object() {
-            Method eval() {
-                try {
-                    return EasingEquations.class.getDeclaredMethod("easeInOut", float.class, float.class, float.class, float.class);
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }.eval());
-
-        private final Method equation;
-
-        Easing(Method equation) {
-            this.equation = equation;
-        }
-
-        public float call(EasingEquations equations, float time, float startingValue, float finalValue, float durationValue) {
-            if (equation == null) {
-                return (finalValue - startingValue) * (time / durationValue) + startingValue;
-            }
-            try {
-                return (float) equation.invoke(equations, time, startingValue, finalValue, durationValue);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public Method getEquation() {
-            return equation;
-        }
-    }
+    private final boolean loop;
 
     public interface EasingEquations {
         float easeIn(float time, float startingValue, float finalValue, float durationValue);
@@ -68,17 +19,9 @@ public class TweeningInfo implements Serializable {
         float easeInOut(float time, float startingValue, float finalValue, float durationValue);
     }
 
-
-    public record TweeningPoint(
-            Class<? extends Script> scriptClass,
-            int scriptIndex,
-            String varName,
-            float startTime,
-            float finalValue,
-            float durationValue,
-            Easing easing,
-            EasingEquations easingEquations
-    ) implements Serializable {
+    public TweeningInfo(boolean loop, TweeningPoint... points) {
+        this.loop = loop;
+        tweeningPoints.addAll(Arrays.asList(points));
     }
 
     public static class Quad implements EasingEquations {
@@ -238,13 +181,156 @@ public class TweeningInfo implements Serializable {
         }
     }
 
-    private final ArrayList<TweeningPoint> tweeningPoints = new ArrayList<>();
-
-    public TweeningInfo() {
+    public boolean isLoop() {
+        return loop;
     }
 
-    public TweeningInfo(TweeningPoint... points) {
-        tweeningPoints.addAll(Arrays.asList(points));
+    private final ArrayList<TweeningPoint> tweeningPoints = new ArrayList<>();
+
+    public enum Easing {
+        LINEAR(null),
+        LINEAR_CLIP(null),
+        EASE_IN(new Object() {
+            Method eval() {
+                try {
+                    return EasingEquations.class.getDeclaredMethod("easeIn", float.class, float.class, float.class, float.class);
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }.eval()),
+        EASE_OUT(new Object() {
+            Method eval() {
+                try {
+                    return EasingEquations.class.getDeclaredMethod("easeOut", float.class, float.class, float.class, float.class);
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }.eval()),
+        EASE_IN_OUT(new Object() {
+            Method eval() {
+                try {
+                    return EasingEquations.class.getDeclaredMethod("easeInOut", float.class, float.class, float.class, float.class);
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }.eval());
+
+        private final Method equation;
+
+        Easing(Method equation) {
+            this.equation = equation;
+        }
+
+        private float linearFunc(float time, float startingValue, float finalValue, float durationValue) {
+            return (finalValue - startingValue) * (time / durationValue) + startingValue;
+        }
+
+        public float call(EasingEquations equations, float time, float startingValue, float finalValue, float durationValue) {
+            if (this == LINEAR) {
+                return linearFunc(time, startingValue, finalValue, durationValue);
+            }
+            if (this == LINEAR_CLIP) {
+                float val = linearFunc(time, startingValue, finalValue, durationValue);
+                if (val - finalValue >= 0) {
+                    val = finalValue - 0.0001f;
+                }
+                return val;
+            }
+            try {
+                return (float) equation.invoke(equations, time, startingValue, finalValue, durationValue);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public Method getEquation() {
+            return equation;
+        }
+    }
+
+    public static class TweeningPoint implements Serializable {
+        private final Class<? extends Script> scriptClass;
+        private final int scriptIndex;
+        private final Field field;
+        private final float startTime;
+        private final float finalValue;
+        private final float durationValue;
+        private final Easing easing;
+        private final EasingEquations easingEquations;
+
+        public TweeningPoint(Class<? extends Script> scriptClass, int scriptIndex, Field field, float startTime, float finalValue, float durationValue, Easing easing, EasingEquations easingEquations) {
+            this.scriptClass = scriptClass;
+            this.scriptIndex = scriptIndex;
+            this.field = field;
+            this.startTime = startTime;
+            this.finalValue = finalValue;
+            this.durationValue = durationValue;
+            this.easing = easing;
+            this.easingEquations = easingEquations;
+        }
+
+        public TweeningPoint(Class<? extends Script> scriptClass, int scriptIndex, String varName, float startTime, float finalValue, float durationValue, Easing easing, EasingEquations easingEquations) {
+            this.scriptClass = scriptClass;
+            this.scriptIndex = scriptIndex;
+            try {
+                this.field = scriptClass.getDeclaredField(varName);
+                field.setAccessible(true);
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }
+            this.startTime = startTime;
+            this.finalValue = finalValue;
+            this.durationValue = durationValue;
+            this.easing = easing;
+            this.easingEquations = easingEquations;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            TweeningPoint that = (TweeningPoint) o;
+            return scriptIndex == that.scriptIndex && Float.compare(startTime, that.startTime) == 0 && Float.compare(finalValue, that.finalValue) == 0 && Float.compare(durationValue, that.durationValue) == 0 && Objects.equals(scriptClass, that.scriptClass) && Objects.equals(field, that.field) && easing == that.easing && Objects.equals(easingEquations, that.easingEquations);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(scriptClass, scriptIndex, field, startTime, finalValue, durationValue, easing, easingEquations);
+        }
+
+        public Class<? extends Script> getScriptClass() {
+            return scriptClass;
+        }
+
+        public int getScriptIndex() {
+            return scriptIndex;
+        }
+
+        public Field getField() {
+            return field;
+        }
+
+        public float getStartTime() {
+            return startTime;
+        }
+
+        public float getFinalValue() {
+            return finalValue;
+        }
+
+        public float getDurationValue() {
+            return durationValue;
+        }
+
+        public Easing getEasing() {
+            return easing;
+        }
+
+        public EasingEquations getEasingEquations() {
+            return easingEquations;
+        }
     }
 
     public ArrayList<TweeningPoint> getTweeningPoints() {

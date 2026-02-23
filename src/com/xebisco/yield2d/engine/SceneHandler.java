@@ -21,6 +21,11 @@ public class SceneHandler extends ApplicationHandler {
     }
 
     @Override
+    public void fixedUpdate(TimeSpan elapsed) {
+        getActualScene().fixedUpdate(elapsed);
+    }
+
+    @Override
     public void destroy() {
         if (getActualScene() != null) getActualScene().destroy();
     }

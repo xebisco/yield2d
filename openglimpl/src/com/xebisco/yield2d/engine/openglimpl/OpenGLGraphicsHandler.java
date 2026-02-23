@@ -21,357 +21,81 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 import static org.lwjgl.opengl.GL.createCapabilities;
 import static org.lwjgl.opengl.GL33.*;
 
 public class OpenGLGraphicsHandler extends GraphicsHandler {
 
-    public class OpenGLGraphics implements Graphics {
-        @Override
-        public void start() {
-            modelMatrix.pushMatrix();
-        }
+    private Map<Mesh2f, OpenGLMesh2f> meshCache = new HashMap<>();
+    private Map<TextureFile, OpenGLTexture> textureCache = new HashMap<>();
+    private Map<FontFile, OpenGLFont> fontCache = new HashMap<>();
 
-        @Override
-        public void end() {
-            modelMatrix.popMatrix();
-        }
-
-        @Override
-        public void drawMesh(Mesh2f mesh, Color color) {
-            OpenGLMesh2f oglMesh = setupMesh(mesh);
-
-            plainShader.bind();
-
-            plainShader.setUniform("projectionMatrix", projectionMatrix);
-            plainShader.setUniform("viewMatrix", viewMatrix);
-            plainShader.setUniform("modelMatrix", modelMatrix);
-            plainShader.setUniform("color", color);
-
-            glBindVertexArray(oglMesh.getVaoId());
-            glDrawElements(GL_TRIANGLES, oglMesh.getNumVertices(), GL_UNSIGNED_INT, 0);
-
-            plainShader.unbind();
-        }
-
-        @Override
-        public void drawMesh(Mesh2f mesh, TextureFile textureFile, Color color) {
-            drawMeshWithTexture(mesh, setupTexture(textureFile), color);
-        }
-
-        public void drawMeshWithTexture(Mesh2f mesh, OpenGLTexture oglTexture, Color color) {
-            OpenGLMesh2f oglMesh = setupMesh(mesh);
-
-            textureShader.bind();
-
-            textureShader.setUniform("projectionMatrix", projectionMatrix);
-            textureShader.setUniform("viewMatrix", viewMatrix);
-            textureShader.setUniform("modelMatrix", modelMatrix);
-            textureShader.setUniform("color", color);
-
-            int tid = oglTexture.getTextureId();
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, tid);
-
-            glBindVertexArray(oglMesh.getVaoId());
-            glDrawElements(GL_TRIANGLES, oglMesh.getNumVertices(), GL_UNSIGNED_INT, 0);
-
-            textureShader.unbind();
-        }
-
-        @Override
-        public void drawText(String text, FontFile fontFile, Color color, float charRotation) {
-            OpenGLFont oglFont = setupFont(fontFile);
-            start();
-            for (char c : text.toCharArray()) {
-                oglFont.loadChar(c);
-                OpenGLTexture texture = oglFont.glyphs.get(c);
-                translate(-texture.width / 2f, 0);
-            }
-            for (char c : text.toCharArray()) {
-                oglFont.loadChar(c);
-                OpenGLTexture texture = oglFont.glyphs.get(c);
-                translate(texture.width / 2f, 0);
-                start();
-                rotate(charRotation);
-                scale(texture.width, texture.height);
-                drawMeshWithTexture(MeshDrawer.DefaultMeshes.RECTANGLE.getValue(), texture, color);
-                end();
-                translate(texture.width / 2f, 0);
-            }
-            end();
-        }
-
-        @Override
-        public void rotate(float angle) {
-            modelMatrix.rotateZ((float) Math.toRadians(angle));
-        }
-
-        @Override
-        public void scale(float x, float y) {
-            modelMatrix.scaleXY(x, y);
-        }
-
-        @Override
-        public void translate(float x, float y) {
-            modelMatrix.translate(x, y, 0);
-        }
-    }
-
-    public static class ShaderProgram {
-
-        private final int programId;
-        private final Map<String, Integer> uniformsCache = new HashMap<>();
-
-        public ShaderProgram(List<ShaderModuleData> shaderModuleDataList) {
-            programId = glCreateProgram();
-            if (programId == 0) {
-                throw new RuntimeException("Could not create Shader");
-            }
-
-            List<Integer> shaderModules = new ArrayList<>();
-            shaderModuleDataList.forEach(s -> shaderModules.add(createShader(s.shaderCode, s.shaderType)));
-
-            link(shaderModules);
-        }
-
-        public void createUniform(String uniformName) {
-            int uniformLocation = glGetUniformLocation(programId, uniformName);
-            if (uniformLocation < 0) {
-                throw new RuntimeException("Could not find uniform [" + uniformName + "] in shader program [" +
-                        programId + "]");
-            }
-            uniformsCache.put(uniformName, uniformLocation);
-        }
-
-        public void setUniform(String uniformName, Matrix4f value) {
-            try (MemoryStack stack = MemoryStack.stackPush()) {
-                Integer location = uniformsCache.get(uniformName);
-                if (location == null) {
-                    throw new RuntimeException("Could not find uniform [" + uniformName + "]");
+    @Override
+    public void init() {
+        if (windowProperties.isCreateWindow()) {
+            frame = new JFrame();
+            frame.setIgnoreRepaint(true);
+            if (windowProperties.isWindowIcon()) {
+                InputStream iconIs = getApplication().getFileHandler().openInputStream("icon.png");
+                try {
+                    frame.setIconImage(ImageIO.read(iconIs));
+                } catch (IOException e) {
+                    Debug.println("WARNING: Couldn't load 'icon.png'.");
                 }
-                glUniformMatrix4fv(location, false, value.get(stack.mallocFloat(16)));
+                getApplication().getFileHandler().closeInputStream(iconIs);
             }
-        }
-
-        public void setUniform(String uniformName, Color value) {
-            Integer location = uniformsCache.get(uniformName);
-            if (location == null) {
-                throw new RuntimeException("Could not find uniform [" + uniformName + "]");
-            }
-            glUniform4f(location, value.getRed(), value.getGreen(), value.getBlue(), value.getAlpha());
-        }
-
-        public void bind() {
-            glUseProgram(programId);
-        }
-
-        public void cleanup() {
-            uniformsCache.clear();
-            unbind();
-            if (programId != 0) {
-                glDeleteProgram(programId);
-            }
-        }
-
-        protected int createShader(String shaderCode, int shaderType) {
-            int shaderId = glCreateShader(shaderType);
-            if (shaderId == 0) {
-                throw new RuntimeException("Error creating shader. Type: " + shaderType);
-            }
-
-            glShaderSource(shaderId, shaderCode);
-            glCompileShader(shaderId);
-
-            if (glGetShaderi(shaderId, GL_COMPILE_STATUS) == 0) {
-                throw new RuntimeException("Error compiling Shader code: " + glGetShaderInfoLog(shaderId, 1024));
-            }
-
-            glAttachShader(programId, shaderId);
-
-            return shaderId;
-        }
-
-        public int getProgramId() {
-            return programId;
-        }
-
-        private void link(List<Integer> shaderModules) {
-            glLinkProgram(programId);
-            if (glGetProgrami(programId, GL_LINK_STATUS) == 0) {
-                throw new RuntimeException("Error linking Shader code: " + glGetProgramInfoLog(programId, 1024));
-            }
-
-            shaderModules.forEach(s -> glDetachShader(programId, s));
-            shaderModules.forEach(GL33::glDeleteShader);
-        }
-
-        public void unbind() {
-            glUseProgram(0);
-        }
-
-        public void validate() {
-            glValidateProgram(programId);
-            if (glGetProgrami(programId, GL_VALIDATE_STATUS) == 0) {
-                throw new RuntimeException("Error validating Shader code: " + glGetProgramInfoLog(programId, 1024));
-            }
-        }
-
-        public record ShaderModuleData(String shaderCode, int shaderType) {
-        }
-    }
-
-    public class OpenGLMesh2f {
-        private int numVertices;
-        private int vaoId;
-        private final ArrayList<Integer> vboIdList = new ArrayList<>();
-        private final int meshHashcode;
-
-        public OpenGLMesh2f(Vector2f[] vertices, Vector2f[] vtexCoords, int[] indices, int meshHashcode) {
-            numVertices = indices.length;
-            this.meshHashcode = meshHashcode;
-
-            vaoId = glGenVertexArrays();
-            glBindVertexArray(vaoId);
-
-            // Positions VBO
-            float[] positions = new float[vertices.length * 2];
-            for (int i = 0; i < vertices.length; i++) {
-                positions[i * 2] = vertices[i].getX();
-                positions[i * 2 + 1] = vertices[i].getY();
-            }
-            int vboId = glGenBuffers();
-            vboIdList.add(vboId);
-            FloatBuffer positionsBuffer = MemoryUtil.memCallocFloat(positions.length);
-            positionsBuffer.put(0, positions);
-            glBindBuffer(GL_ARRAY_BUFFER, vboId);
-            glBufferData(GL_ARRAY_BUFFER, positionsBuffer, GL_STATIC_DRAW);
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 2, GL_FLOAT, false, 0, 0);
-
-            if (vtexCoords != null) {
-                // Texture coordinates VBO
-                float[] texCoords = new float[vtexCoords.length * 2];
-                for (int i = 0; i < vtexCoords.length; i++) {
-                    texCoords[i * 2] = vtexCoords[i].getX();
-                    texCoords[i * 2 + 1] = vtexCoords[i].getY();
+            frame.setTitle(getApplication().getTitle());
+            frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+            frame.setLayout(new BorderLayout());
+            frame.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    getApplication().getLoop().getRunning().set(false);
                 }
-                vboId = glGenBuffers();
-                vboIdList.add(vboId);
-                FloatBuffer textCoordsBuffer = MemoryUtil.memCallocFloat(texCoords.length);
-                textCoordsBuffer.put(0, texCoords);
-                glBindBuffer(GL_ARRAY_BUFFER, vboId);
-                glBufferData(GL_ARRAY_BUFFER, textCoordsBuffer, GL_STATIC_DRAW);
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+            });
+            frame.add(mainPanel);
+
+            switch (windowProperties.getWindowStyle()) {
+                case PLAIN:
+                    String osName = System.getProperty("os.name");
+                    if (osName != null && osName.toLowerCase().contains("linux")) {
+                        frame.setSize(windowProperties.getWindowSize().getX(), windowProperties.getWindowSize().getY());
+                        frame.setLocationRelativeTo(null);
+                        frame.setVisible(true);
+                    } else {
+                        frame.setVisible(true);
+                        frame.setSize(windowProperties.getWindowSize().getX(), windowProperties.getWindowSize().getY() + frame.getInsets().top);
+                        frame.setLocationRelativeTo(null);
+                    }
+
+                    break;
+                case UNDECORATED:
+                    frame.setSize(windowProperties.getWindowSize().getX(), windowProperties.getWindowSize().getY());
+                    frame.setUndecorated(true);
+                    frame.setLocationRelativeTo(null);
+                    frame.setVisible(true);
+                    break;
+                case MAXIMIZED:
+                    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                    frame.setVisible(true);
+                    break;
+                case FULLSCREEN:
+                    frame.setUndecorated(true);
+                    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                    frame.setVisible(true);
+                    break;
             }
+            frame.setResizable(windowProperties.isResizable());
 
-            // Index VBO
-            vboId = glGenBuffers();
-            vboIdList.add(vboId);
-            IntBuffer indicesBuffer = MemoryUtil.memCallocInt(indices.length);
-            indicesBuffer.put(0, indices);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboId);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW);
-
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glBindVertexArray(0);
-
-            MemoryUtil.memFree(positionsBuffer);
-            MemoryUtil.memFree(indicesBuffer);
-        }
-
-        public void cleanup() {
-            vboIdList.forEach(GL33::glDeleteBuffers);
-            glDeleteVertexArrays(vaoId);
-        }
-
-        public int getNumVertices() {
-            return numVertices;
-        }
-
-        public void setNumVertices(int numVertices) {
-            this.numVertices = numVertices;
-        }
-
-        public int getVaoId() {
-            return vaoId;
-        }
-
-        public void setVaoId(int vaoId) {
-            this.vaoId = vaoId;
-        }
-
-        public ArrayList<Integer> getVboIdList() {
-            return vboIdList;
-        }
-
-        public int getMeshHashcode() {
-            return meshHashcode;
-        }
-    }
-
-    public class CanvasImpl extends AWTGLCanvas {
-        public CanvasImpl(GLData data) {
-            super(data);
-        }
-
-        public void initGL() {
-            Debug.println("OpenGL version: " + effective.majorVersion + "." + effective.minorVersion + " (Profile: " + effective.profile + ")");
-            createCapabilities();
-
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glEnable(GL_SCISSOR_TEST);
-            updateProjectionMatrix();
-        }
-
-        private void updateProjectionMatrix() {
-            int width = windowProperties.getViewportSize().getX(), height = windowProperties.getViewportSize().getY();
-
-            if(windowProperties.getViewportStyle() == WindowProperties.ViewportStyle.FIT_ON_FRAME) {
-                width = getWidth();
-                height = getHeight();
-            }
-
-            projectionMatrix.identity().ortho(-width / 2f, width / 2f, -height / 2f, height / 2f, -1f, 1f);
-        }
-
-        public void runQueue() {
-            while (!runOnOGLContext.isEmpty()) {
-                runOnOGLContext.get(0).run();
-                runOnOGLContext.remove(0);
-            }
-        }
-
-        public void paintGL() {
-            runQueue();
-
-            camera = getApplication().getSceneHandler().getActualScene().getCameraScript();
-
-            glClearColor(0, 0, 0, 1);
-
-            glScissor(0, 0, getWidth(), getHeight());
-
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            updateViewport();
-
-            glClearColor(camera.getBackground().getRed(), camera.getBackground().getGreen(), camera.getBackground().getBlue(), 1);
-
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            getApplication().getSceneHandler().getActualScene().draw(graphics);
-
-            swapBuffers();
+            frame.transferFocus();
+            SwingUtilities.invokeLater(mainPanel::transferFocus);
         }
     }
 
@@ -491,9 +215,22 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
 
     private final WindowProperties windowProperties;
 
-    private Map<Mesh2f, OpenGLMesh2f> meshCache;
-    private Map<TextureFile, OpenGLTexture> textureCache;
-    private Map<FontFile, OpenGLFont> fontCache;
+    @Override
+    public void update(TimeSpan elapsed) {
+
+    }
+
+    @Override
+    public void fixedUpdate(TimeSpan elapsed) {
+
+    }
+
+    @Override
+    public void render() {
+        if (canvas.isShowing()) {
+            canvas.render();
+        }
+    }
     private Matrix4f projectionMatrix = new Matrix4f(), viewMatrix = new Matrix4f();
     private GrowableMat4fStack modelMatrix = new GrowableMat4fStack(10);
     private ShaderProgram plainShader, textureShader;
@@ -573,101 +310,6 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
 
     @Override
     public void load() {
-        meshCache = new HashMap<>();
-        textureCache = new HashMap<>();
-        fontCache = new HashMap<>();
-
-        runOnOGLContext.add(() -> {
-            List<ShaderProgram.ShaderModuleData> shaderModuleDataList = new ArrayList<>();
-            shaderModuleDataList.add(new ShaderProgram.ShaderModuleData("""
-                    
-                    #version 330
-                    
-                    layout (location=0) in vec2 position;
-                    
-                    uniform mat4 modelMatrix;
-                    uniform mat4 viewMatrix;
-                    uniform mat4 projectionMatrix;
-                    
-                    void main()
-                    {
-                        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 0.0, 1.0);
-                    }
-                    
-                    """, GL_VERTEX_SHADER));
-            shaderModuleDataList.add(new ShaderProgram.ShaderModuleData("""
-                    
-                    #version 330
-                    
-                    out vec4 fragColor;
-                    uniform vec4 color;
-                    
-                    void main()
-                    {
-                        fragColor = color;
-                    }
-                    
-                    """, GL_FRAGMENT_SHADER));
-
-            plainShader = new ShaderProgram(shaderModuleDataList);
-            plainShader.createUniform("modelMatrix");
-            plainShader.createUniform("viewMatrix");
-            plainShader.createUniform("projectionMatrix");
-            plainShader.createUniform("color");
-
-            shaderModuleDataList.clear();
-
-            shaderModuleDataList.add(new ShaderProgram.ShaderModuleData("""
-                    
-                    #version 330
-                    
-                    layout (location=0) in vec2 position;
-                    layout (location=1) in vec2 texCoord;
-                    
-                    out vec2 outTextCoord;
-                    
-                    uniform mat4 projectionMatrix;
-                    uniform mat4 viewMatrix;
-                    uniform mat4 modelMatrix;
-                    
-                    void main()
-                    {
-                        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 0.0, 1.0);
-                        outTextCoord = texCoord;
-                    }
-                    
-                    """, GL_VERTEX_SHADER));
-
-            shaderModuleDataList.add(new ShaderProgram.ShaderModuleData("""
-                    
-                    #version 330
-                    
-                    in vec2 outTextCoord;
-                    
-                    out vec4 fragColor;
-                    
-                    uniform sampler2D txtSampler;
-                    uniform vec4 color;
-                    
-                    void main()
-                    {
-                        fragColor = texture(txtSampler, outTextCoord);
-                        fragColor.r *= color.r;
-                        fragColor.g *= color.g;
-                        fragColor.b *= color.b;
-                        fragColor.a *= color.a;
-                    }
-                    
-                    """, GL_FRAGMENT_SHADER));
-
-            textureShader = new ShaderProgram(shaderModuleDataList);
-            textureShader.createUniform("modelMatrix");
-            textureShader.createUniform("viewMatrix");
-            textureShader.createUniform("projectionMatrix");
-            textureShader.createUniform("txtSampler");
-            textureShader.createUniform("color");
-        });
-
         System.setProperty("sun.awt.noerasebackground", "true");
         Toolkit.getDefaultToolkit().setDynamicLayout(false);
 
@@ -691,61 +333,341 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
     }
 
     @Override
-    public void init() {
-        if (windowProperties.isCreateWindow()) {
-            frame = new JFrame();
-            frame.setIgnoreRepaint(true);
-            if (windowProperties.isWindowIcon()) {
-                InputStream iconIs = getApplication().getFileHandler().openInputStream("icon.png");
-                try {
-                    frame.setIconImage(ImageIO.read(iconIs));
-                } catch (IOException e) {
-                    Debug.println("WARNING: Couldn't load 'icon.png'.");
-                }
-                getApplication().getFileHandler().closeInputStream(iconIs);
-            }
-            frame.setTitle(getApplication().getTitle());
-            frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-            frame.setLayout(new BorderLayout());
-            frame.addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    getApplication().getLoop().getRunning().set(false);
-                }
-            });
-            frame.add(mainPanel);
+    public void loadTextureAtlasInfo(TextureAtlasFile.TextureAtlas info) {
+        InputStream inputStream = getApplication().getFileHandler().openInputStream(info.getImagePath());
+        BufferedImage image;
+        try {
+            image = ImageIO.read(inputStream);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        getApplication().getFileHandler().closeInputStream(inputStream);
 
-            switch (windowProperties.getWindowStyle()) {
-                case PLAIN -> {
-                    frame.setSize(windowProperties.getWindowSize().getX(), windowProperties.getWindowSize().getY());
-                }
-                case UNDECORATED -> {
-                    frame.setSize(windowProperties.getWindowSize().getX(), windowProperties.getWindowSize().getY());
-                    frame.setUndecorated(true);
-                }
-                case MAXIMIZED -> {
-                    frame.setSize(windowProperties.getWindowSize().getX(), windowProperties.getWindowSize().getY());
-                    frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-                }
-                case FULLSCREEN -> {
-                    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-                    GraphicsDevice gd = ge.getDefaultScreenDevice();
-                    gd.setFullScreenWindow(frame);
-                }
+        for (TextureAtlasFile.Clip[] clips : info.getClipMap().values()) {
+            for (TextureAtlasFile.Clip clip : clips) {
+                TextureFile texture = new TextureFile("", TextureFile.TextureFilter.NEAREST);
+                textureCache.put(texture, new OpenGLTexture(image.getSubimage(clip.getX(), clip.getY(), clip.getWidth(), clip.getHeight()), TextureFile.TextureFilter.NEAREST));
+                clip.setTexture(texture);
             }
-            frame.setResizable(windowProperties.isResizable());
-
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-            frame.transferFocus();
-            SwingUtilities.invokeLater(mainPanel::transferFocus);
         }
     }
 
-    @Override
-    public void update(TimeSpan elapsed) {
-        if (canvas.isDisplayable()) {
-            canvas.render();
+    public static class ShaderProgram {
+
+        private final int programId;
+        private final Map<String, Integer> uniformsCache = new HashMap<>();
+
+        public ShaderProgram(List<ShaderModuleData> shaderModuleDataList) {
+            programId = glCreateProgram();
+            if (programId == 0) {
+                throw new RuntimeException("Could not create Shader");
+            }
+
+            List<Integer> shaderModules = new ArrayList<>();
+            shaderModuleDataList.forEach(s -> shaderModules.add(createShader(s.shaderCode, s.shaderType)));
+
+            link(shaderModules);
+        }
+
+        public void createUniform(String uniformName) {
+            int uniformLocation = glGetUniformLocation(programId, uniformName);
+            if (uniformLocation < 0) {
+                throw new RuntimeException("Could not find uniform [" + uniformName + "] in shader program [" +
+                        programId + "]");
+            }
+            uniformsCache.put(uniformName, uniformLocation);
+        }
+
+        public void setUniform(String uniformName, Matrix4f value) {
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                Integer location = uniformsCache.get(uniformName);
+                if (location == null) {
+                    throw new RuntimeException("Could not find uniform [" + uniformName + "]");
+                }
+                glUniformMatrix4fv(location, false, value.get(stack.mallocFloat(16)));
+            }
+        }
+
+        public void setUniform(String uniformName, Color value) {
+            Integer location = uniformsCache.get(uniformName);
+            if (location == null) {
+                throw new RuntimeException("Could not find uniform [" + uniformName + "]");
+            }
+            glUniform4f(location, value.getRed(), value.getGreen(), value.getBlue(), value.getAlpha());
+        }
+
+        public void bind() {
+            glUseProgram(programId);
+        }
+
+        public void cleanup() {
+            uniformsCache.clear();
+            unbind();
+            if (programId != 0) {
+                glDeleteProgram(programId);
+            }
+        }
+
+        protected int createShader(String shaderCode, int shaderType) {
+            int shaderId = glCreateShader(shaderType);
+            if (shaderId == 0) {
+                throw new RuntimeException("Error creating shader. Type: " + shaderType);
+            }
+
+            glShaderSource(shaderId, shaderCode);
+            glCompileShader(shaderId);
+
+            if (glGetShaderi(shaderId, GL_COMPILE_STATUS) == 0) {
+                throw new RuntimeException("Error compiling Shader code: " + glGetShaderInfoLog(shaderId, 1024));
+            }
+
+            glAttachShader(programId, shaderId);
+
+            return shaderId;
+        }
+
+        public int getProgramId() {
+            return programId;
+        }
+
+        private void link(List<Integer> shaderModules) {
+            glLinkProgram(programId);
+            if (glGetProgrami(programId, GL_LINK_STATUS) == 0) {
+                throw new RuntimeException("Error linking Shader code: " + glGetProgramInfoLog(programId, 1024));
+            }
+
+            shaderModules.forEach(s -> glDetachShader(programId, s));
+            shaderModules.forEach(GL33::glDeleteShader);
+        }
+
+        public void unbind() {
+            glUseProgram(0);
+        }
+
+        public void validate() {
+            glValidateProgram(programId);
+            if (glGetProgrami(programId, GL_VALIDATE_STATUS) == 0) {
+                throw new RuntimeException("Error validating Shader code: " + glGetProgramInfoLog(programId, 1024));
+            }
+        }
+
+        public static class ShaderModuleData {
+            private final String shaderCode;
+            private final int shaderType;
+
+            public ShaderModuleData(String shaderCode, int shaderType) {
+                this.shaderCode = shaderCode;
+                this.shaderType = shaderType;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (o == null || getClass() != o.getClass()) return false;
+                ShaderModuleData that = (ShaderModuleData) o;
+                return shaderType == that.shaderType && Objects.equals(shaderCode, that.shaderCode);
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(shaderCode, shaderType);
+            }
+
+            public String getShaderCode() {
+                return shaderCode;
+            }
+
+            public int getShaderType() {
+                return shaderType;
+            }
+        }
+    }
+
+    public class OpenGLGraphics implements Graphics {
+        @Override
+        public void start() {
+            modelMatrix.pushMatrix();
+        }
+
+        @Override
+        public void end() {
+            modelMatrix.popMatrix();
+        }
+
+        @Override
+        public void drawMesh(Mesh2f mesh, Color color) {
+            if (!canvas.isVisible()) return;
+            OpenGLMesh2f oglMesh = setupMesh(mesh);
+
+            plainShader.bind();
+
+            plainShader.setUniform("projectionMatrix", projectionMatrix);
+            plainShader.setUniform("viewMatrix", viewMatrix);
+            plainShader.setUniform("modelMatrix", modelMatrix);
+            plainShader.setUniform("color", color);
+
+            glBindVertexArray(oglMesh.getVaoId());
+            glDrawElements(GL_TRIANGLES, oglMesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+
+            plainShader.unbind();
+        }
+
+        @Override
+        public void drawMesh(Mesh2f mesh, TextureFile textureFile, Color color) {
+            drawMeshWithTexture(mesh, setupTexture(textureFile), color);
+        }
+
+        public void drawMeshWithTexture(Mesh2f mesh, OpenGLTexture oglTexture, Color color) {
+            OpenGLMesh2f oglMesh = setupMesh(mesh);
+
+            textureShader.bind();
+
+            textureShader.setUniform("projectionMatrix", projectionMatrix);
+            textureShader.setUniform("viewMatrix", viewMatrix);
+            textureShader.setUniform("modelMatrix", modelMatrix);
+            textureShader.setUniform("color", color);
+
+            int tid = oglTexture.getTextureId();
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, tid);
+
+            glBindVertexArray(oglMesh.getVaoId());
+            glDrawElements(GL_TRIANGLES, oglMesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+
+            textureShader.unbind();
+        }
+
+        @Override
+        public void drawText(String text, FontFile fontFile, Color color, float charRotation) {
+            OpenGLFont oglFont = setupFont(fontFile);
+            start();
+            for (char c : text.toCharArray()) {
+                oglFont.loadChar(c);
+                OpenGLTexture texture = oglFont.glyphs.get(c);
+                translate(-texture.width / 2f, 0);
+            }
+            for (char c : text.toCharArray()) {
+                oglFont.loadChar(c);
+                OpenGLTexture texture = oglFont.glyphs.get(c);
+                translate(texture.width / 2f, 0);
+                start();
+                rotate(charRotation);
+                scale(texture.width, texture.height);
+                drawMeshWithTexture(MeshDrawer.DefaultMeshes.RECTANGLE.getValue(), texture, color);
+                end();
+                translate(texture.width / 2f, 0);
+            }
+            end();
+        }
+
+        @Override
+        public void rotate(float angle) {
+            modelMatrix.rotateZ((float) Math.toRadians(angle));
+        }
+
+        @Override
+        public void scale(float x, float y) {
+            modelMatrix.scaleXY(x, y);
+        }
+
+        @Override
+        public void translate(float x, float y) {
+            modelMatrix.translate(x, y, 0);
+        }
+    }
+
+    public class OpenGLMesh2f {
+        private int numVertices;
+        private int vaoId;
+        private final ArrayList<Integer> vboIdList = new ArrayList<>();
+        private final int meshHashcode;
+
+        public OpenGLMesh2f(Vector2f[] vertices, Vector2f[] vtexCoords, int[] indices, int meshHashcode) {
+            numVertices = indices.length;
+            this.meshHashcode = meshHashcode;
+
+            vaoId = glGenVertexArrays();
+            glBindVertexArray(vaoId);
+
+            // Positions VBO
+            float[] positions = new float[vertices.length * 2];
+            for (int i = 0; i < vertices.length; i++) {
+                positions[i * 2] = vertices[i].getX();
+                positions[i * 2 + 1] = vertices[i].getY();
+            }
+            int vboId = glGenBuffers();
+            vboIdList.add(vboId);
+            FloatBuffer positionsBuffer = MemoryUtil.memCallocFloat(positions.length);
+            positionsBuffer.position(0);
+            positionsBuffer.put(positions);
+            positionsBuffer.flip();
+            glBindBuffer(GL_ARRAY_BUFFER, vboId);
+            glBufferData(GL_ARRAY_BUFFER, positionsBuffer, GL_STATIC_DRAW);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 2, GL_FLOAT, false, 0, 0);
+
+            if (vtexCoords != null) {
+                // Texture coordinates VBO
+                float[] texCoords = new float[vtexCoords.length * 2];
+                for (int i = 0; i < vtexCoords.length; i++) {
+                    texCoords[i * 2] = vtexCoords[i].getX();
+                    texCoords[i * 2 + 1] = vtexCoords[i].getY();
+                }
+                vboId = glGenBuffers();
+                vboIdList.add(vboId);
+                FloatBuffer textCoordsBuffer = MemoryUtil.memCallocFloat(texCoords.length);
+                textCoordsBuffer.position(0);
+                textCoordsBuffer.put(texCoords);
+                textCoordsBuffer.flip();
+                glBindBuffer(GL_ARRAY_BUFFER, vboId);
+                glBufferData(GL_ARRAY_BUFFER, textCoordsBuffer, GL_STATIC_DRAW);
+                glEnableVertexAttribArray(1);
+                glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+            }
+
+            // Index VBO
+            vboId = glGenBuffers();
+            vboIdList.add(vboId);
+            IntBuffer indicesBuffer = MemoryUtil.memCallocInt(indices.length);
+            indicesBuffer.position(0);
+            indicesBuffer.put(indices);
+            indicesBuffer.flip();
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboId);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL_STATIC_DRAW);
+
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+
+            MemoryUtil.memFree(positionsBuffer);
+            MemoryUtil.memFree(indicesBuffer);
+        }
+
+        public void cleanup() {
+            vboIdList.forEach(GL33::glDeleteBuffers);
+            glDeleteVertexArrays(vaoId);
+        }
+
+        public int getNumVertices() {
+            return numVertices;
+        }
+
+        public void setNumVertices(int numVertices) {
+            this.numVertices = numVertices;
+        }
+
+        public int getVaoId() {
+            return vaoId;
+        }
+
+        public void setVaoId(int vaoId) {
+            this.vaoId = vaoId;
+        }
+
+        public ArrayList<Integer> getVboIdList() {
+            return vboIdList;
+        }
+
+        public int getMeshHashcode() {
+            return meshHashcode;
         }
     }
 
@@ -761,21 +683,97 @@ public class OpenGLGraphicsHandler extends GraphicsHandler {
         return new ImmutableVector2i(oglTexture.width, oglTexture.height);
     }
 
-    @Override
-    public void loadTextureAtlasInfo(TextureAtlasFile.TextureAtlas info) {
-        InputStream inputStream = getApplication().getFileHandler().openInputStream(info.imagePath());
-        BufferedImage image;
-        try {
-            image = ImageIO.read(inputStream);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public class CanvasImpl extends AWTGLCanvas {
+        public CanvasImpl(GLData data) {
+            super(data);
         }
-        getApplication().getFileHandler().closeInputStream(inputStream);
 
-        for (TextureAtlasFile.Clip clip : info.clipMap().values()) {
-            TextureFile texture = new TextureFile("", info.filter());
-            textureCache.put(texture, new OpenGLTexture(image.getSubimage(clip.getX(), clip.getY(), clip.getWidth(), clip.getHeight()), info.filter()));
-            clip.setTexture(texture);
+        public void initGL() {
+            Debug.println("OpenGL version: " + effective.majorVersion + "." + effective.minorVersion + " (Profile: " + effective.profile + ")");
+            createCapabilities();
+
+            meshCache.clear();
+            textureCache.clear();
+            fontCache.clear();
+
+            List<ShaderProgram.ShaderModuleData> shaderModuleDataList = new ArrayList<>();
+            try {
+                shaderModuleDataList.add(new ShaderProgram.ShaderModuleData(Utils.readStringFromClasspath("/com/xebisco/yield2d/engine/openglimpl/default.vs"), GL_VERTEX_SHADER));
+                shaderModuleDataList.add(new ShaderProgram.ShaderModuleData(Utils.readStringFromClasspath("/com/xebisco/yield2d/engine/openglimpl/default.fs"), GL_FRAGMENT_SHADER));
+            } catch (URISyntaxException | IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            plainShader = new ShaderProgram(shaderModuleDataList);
+            plainShader.createUniform("modelMatrix");
+            plainShader.createUniform("viewMatrix");
+            plainShader.createUniform("projectionMatrix");
+            plainShader.createUniform("color");
+
+            shaderModuleDataList.clear();
+
+            try {
+                shaderModuleDataList.add(new ShaderProgram.ShaderModuleData(Utils.readStringFromClasspath("/com/xebisco/yield2d/engine/openglimpl/texture.vs"), GL_VERTEX_SHADER));
+                shaderModuleDataList.add(new ShaderProgram.ShaderModuleData(Utils.readStringFromClasspath("/com/xebisco/yield2d/engine/openglimpl/texture.fs"), GL_FRAGMENT_SHADER));
+            } catch (URISyntaxException | IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            textureShader = new ShaderProgram(shaderModuleDataList);
+            textureShader.createUniform("modelMatrix");
+            textureShader.createUniform("viewMatrix");
+            textureShader.createUniform("projectionMatrix");
+            textureShader.createUniform("txtSampler");
+            textureShader.createUniform("color");
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_SCISSOR_TEST);
+            updateProjectionMatrix();
+        }
+
+        private void updateProjectionMatrix() {
+            int width = windowProperties.getViewportSize().getX(), height = windowProperties.getViewportSize().getY();
+
+            if (windowProperties.getViewportStyle() == WindowProperties.ViewportStyle.FIT_ON_FRAME) {
+                width = getWidth();
+                height = getHeight();
+            }
+
+            projectionMatrix.identity().ortho(-width / 2f, width / 2f, -height / 2f, height / 2f, -1f, 1f);
+        }
+
+        public void runQueue() {
+            while (!runOnOGLContext.isEmpty()) {
+                runOnOGLContext.get(0).run();
+                runOnOGLContext.remove(0);
+            }
+        }
+
+        public void paintGL() {
+            if (!isValid() || getWidth() == 0 || getHeight() == 0) {
+                return;
+            }
+
+            runQueue();
+
+            camera = getApplication().getSceneHandler().getActualScene().getCameraScript();
+
+            glClearColor(0, 0, 0, 1);
+
+            glScissor(0, 0, getWidth(), getHeight());
+
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            updateViewport();
+
+            glClearColor(camera.getBackground().getRed(), camera.getBackground().getGreen(), camera.getBackground().getBlue(), 1);
+
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            getApplication().getSceneHandler().getActualScene().draw(graphics);
+
+            swapBuffers();
         }
     }
 

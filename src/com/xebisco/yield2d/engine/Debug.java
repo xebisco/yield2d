@@ -4,7 +4,19 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 
 public class Debug {
-    public static final PrintStream NULL_OUTPUT = new PrintStream(OutputStream.nullOutputStream());
+    private static final OutputStream nullOutputStream = new OutputStream() {
+        @Override
+        public void write(int b) {
+
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) {
+
+        }
+    };
+
+    public static final PrintStream NULL_OUTPUT = new PrintStream(nullOutputStream);
 
     private static PrintStream out = NULL_OUTPUT, debugOut = System.err;
 

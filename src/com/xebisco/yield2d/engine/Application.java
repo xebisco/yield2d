@@ -1,7 +1,6 @@
 package com.xebisco.yield2d.engine;
 
 import com.google.gson.Gson;
-import com.google.gson.TypeAdapter;
 import com.google.gson.reflect.TypeToken;
 import com.xebisco.yield2d.engine.physics.PhysicsHandler;
 
@@ -30,90 +29,24 @@ public final class Application extends HandlerCollection {
         }
     }
 
-    public class ApplicationLoop implements Runnable {
-        private final Thread thread;
-        private final AtomicBoolean running = new AtomicBoolean();
-
-        public ApplicationLoop() {
-            thread = new Thread(this, "Yield Application Loop");
-            thread.start();
-        }
-
-        @Override
-        public void run() {
-            running.set(true);
-            long nextTick = System.nanoTime(), lastTick = nextTick, now = lastTick, waitTarget;
-
-            while (running.get()) {
-                while (now >= nextTick) {
-                    now = System.nanoTime();
-                    update(new TimeSpan(now - lastTick));
-                    lastTick = now;
-                    nextTick += updateInterval.nanoSeconds();
-                }
-
-                now = System.nanoTime();
-                waitTarget = nextTick - now;
-
-                if (waitTarget > 2_000_000) {
-                    try {
-                        //noinspection BusyWait
-                        Thread.sleep((waitTarget - 2_000_000) / 1_000_000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-
-                while (System.nanoTime() < nextTick) {
-                    //NOTHING, JUST WAIT
-                }
-            }
-
-
-            long last = System.nanoTime(), actual;
-            long value = 0;
-            while (running.get()) {
-                if (value > 0) {
-                    do {
-                        actual = System.nanoTime();
-                    } while (actual - last < updateInterval.nanoSeconds());
-                } else {
-                    actual = System.nanoTime();
-                }
-
-                update(new TimeSpan(actual - last));
-
-                last = actual;
-                actual = System.nanoTime();
-
-                value = updateInterval.nanoSeconds() - 1_000_000 - ((actual - last) / 1_000_000);
-                if (value > 0) {
-                    try {
-                        //noinspection BusyWait
-                        Thread.sleep(value / 1_000_000, (int) (value - (value / 1_000_000 * 1_000_000)));
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-            destroy();
-            thread.interrupt();
-        }
-
-        public Thread getThread() {
-            return thread;
-        }
-
-        public AtomicBoolean getRunning() {
-            return running;
-        }
-    }
+    private ApplicationLoop loop, fixedLoop;
 
     private final Type type;
     private String title = "Yield App";
     private final TimeSpan createdTime = new TimeSpan(System.nanoTime());
-    private TimeSpan updateInterval = new TimeSpan(16_666_667);
-    private ApplicationLoop loop;
+
+    @Override
+    public void init() {
+        super.init();
+        if (getSceneHandler().getActualScene() == null) {
+            Debug.println("WARNING: ActualScene is null.");
+        }
+
+        Debug.println("Starting application " + this + "...");
+        loop = new ApplicationLoop(false, new TimeSpan(16_666_667));
+        fixedLoop = new ApplicationLoop(true, new TimeSpan(16_666_667));
+        Debug.println(this + " started.");
+    }
     private Map<String, Axis> axisMap;
     private boolean destroyed;
 
@@ -182,48 +115,38 @@ public final class Application extends HandlerCollection {
     }
 
     @Override
-    public void init() {
-        super.init();
-        if (getSceneHandler().getActualScene() == null) {
-            Debug.println("WARNING: ActualScene is null.");
-        }
-
-        Debug.println("Starting application " + this + "...");
-        loop = new ApplicationLoop();
-        Debug.println(this + " started.");
-    }
-
-    @Override
     public void destroy() {
         loop.running.set(false);
-        if(!destroyed) {
+        fixedLoop.running.set(false);
+        if (!destroyed) {
             destroyed = true;
             super.destroy();
         }
     }
 
-    public void loadTextureAtlas(TextureAtlasFile textureAtlasFile) {
-        if(textureAtlasFile.getTextureAtlasInfo() == null) {
-            textureAtlasFile.setInputStream(getFileHandler().openInputStream(textureAtlasFile.getPath()));
-            Gson gson = new Gson();
-            TypeAdapter<TextureAtlasFile.TextureAtlas> infoType = gson.getAdapter(TextureAtlasFile.TextureAtlas.class);
-            try {
-                textureAtlasFile.setTextureAtlasInfo(infoType.fromJson(new InputStreamReader(textureAtlasFile.getInputStream())));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            getFileHandler().closeInputStream(textureAtlasFile.getInputStream());
-        }
+    public TextureAtlasFile loadTextureAtlas(String textureAtlasFilePath) {
+        TextureAtlasFile textureAtlasFile = new TextureAtlasFile(textureAtlasFilePath);
+        Gson gson = new Gson();
+        FileHandler fileHandler = getFileHandler();
+        InputStream is = fileHandler.openInputStream(textureAtlasFilePath);
+        textureAtlasFile.setTextureAtlasInfo(gson.fromJson(new InputStreamReader(is), TextureAtlasFile.TextureAtlas.class));
+        fileHandler.closeInputStream(is);
+
         getGraphicsHandler().loadTextureAtlasInfo(textureAtlasFile.getTextureAtlasInfo());
+        return textureAtlasFile;
     }
 
     public float getAxisValue(String axisKey) {
-        if(!getAxisMap().containsKey(axisKey)) throw new IllegalArgumentException("Axis doesn't exist.");
+        if (!getAxisMap().containsKey(axisKey)) throw new IllegalArgumentException("Axis doesn't exist.");
         return getAxisMap().get(axisKey).getValue(getInputHandler());
     }
 
     public TimeSpan getTimeSinceCreation() {
-        return new TimeSpan(System.nanoTime() - getCreatedTime().nanoSeconds());
+        return new TimeSpan(System.nanoTime() - getCreatedTime().getNanoSeconds());
+    }
+
+    public ApplicationLoop getFixedLoop() {
+        return fixedLoop;
     }
 
     public TimeSpan getCreatedTime() {
@@ -298,12 +221,83 @@ public final class Application extends HandlerCollection {
         this.title = title;
     }
 
-    public TimeSpan getUpdateInterval() {
-        return updateInterval;
+    public Application setFixedLoop(ApplicationLoop fixedLoop) {
+        this.fixedLoop = fixedLoop;
+        return this;
     }
 
-    public void setUpdateInterval(TimeSpan updateInterval) {
-        this.updateInterval = updateInterval;
+    public class ApplicationLoop implements Runnable {
+        private final Thread thread;
+        private final AtomicBoolean running = new AtomicBoolean();
+        private final boolean fixedDelta;
+        private TimeSpan updateInterval;
+
+        public ApplicationLoop(boolean fixedDelta, TimeSpan updateInterval) {
+            this.fixedDelta = fixedDelta;
+            this.updateInterval = updateInterval;
+            thread = new Thread(this, "Yield Application Loop");
+            thread.start();
+        }
+
+        @Override
+        public void run() {
+            running.set(true);
+            long last = System.nanoTime(), actual;
+            long value = 0;
+            while (running.get()) {
+                if (value > 0) {
+                    do {
+                        actual = System.nanoTime();
+                    } while (actual - last < updateInterval.getNanoSeconds());
+                } else {
+                    actual = System.nanoTime();
+                }
+
+                if (fixedDelta)
+                    fixedUpdate(updateInterval);
+                else {
+                    update(new TimeSpan(actual - last));
+
+                    render();
+                }
+
+                last = actual;
+                actual = System.nanoTime();
+
+                value = updateInterval.getNanoSeconds() - 1_000_000 - ((actual - last) / 1_000_000);
+                if (value > 0) {
+                    try {
+                        //noinspection BusyWait
+                        Thread.sleep(value / 1_000_000, (int) (value - (value / 1_000_000 * 1_000_000)));
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+            destroy();
+            thread.interrupt();
+        }
+
+        public Thread getThread() {
+            return thread;
+        }
+
+        public AtomicBoolean getRunning() {
+            return running;
+        }
+
+        public boolean isFixedDelta() {
+            return fixedDelta;
+        }
+
+        public TimeSpan getUpdateInterval() {
+            return updateInterval;
+        }
+
+        public ApplicationLoop setUpdateInterval(TimeSpan updateInterval) {
+            this.updateInterval = updateInterval;
+            return this;
+        }
     }
 
     public ApplicationLoop getLoop() {

@@ -15,22 +15,22 @@ public class ImmutableColor extends Color {
     }
 
     @Override
-    public void setAlpha(float alpha) {
+    public Color setAlpha(float alpha) {
         throw new UnsupportedOperationException("Cannot modify an immutable color");
     }
 
     @Override
-    public void setBlue(float blue) {
+    public Color setBlue(float blue) {
         throw new UnsupportedOperationException("Cannot modify an immutable color");
     }
 
     @Override
-    public void setGreen(float green) {
+    public Color setGreen(float green) {
         throw new UnsupportedOperationException("Cannot modify an immutable color");
     }
 
     @Override
-    public void setRed(float red) {
+    public Color setRed(float red) {
         throw new UnsupportedOperationException("Cannot modify an immutable color");
     }
 

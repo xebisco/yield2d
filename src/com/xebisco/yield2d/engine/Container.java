@@ -2,7 +2,10 @@ package com.xebisco.yield2d.engine;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.ConcurrentModificationException;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -78,6 +81,16 @@ public class Container implements Handler, Comparable<Container>, Drawer {
         frames++;
     }
 
+    @Override
+    public void fixedUpdate(TimeSpan elapsed) {
+        if (!loaded || getFrames() <= 1) return;
+        callOnAllScripts(script -> script.fixedUpdate(elapsed));
+        callOnAllChildren(child -> {
+            if (!getToRemove().contains(child))
+                child.fixedUpdate(elapsed);
+        });
+    }
+
     public void addChild(Container child) {
         toAdd.add(child);
     }
@@ -95,7 +108,10 @@ public class Container implements Handler, Comparable<Container>, Drawer {
         g.rotate(getTransform().getRotation());
         g.scale(getTransform().getScale().getX(), getTransform().getScale().getY());
         callOnAllScripts(script -> {
-            if (script instanceof Drawer drawer) drawer.draw(g);
+            if (script instanceof Drawer) {
+                Drawer drawer = (Drawer) script;
+                drawer.draw(g);
+            }
         });
         callOnAllChildren(child -> {
             if (!getToRemove().contains(child))

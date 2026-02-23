@@ -1,12 +1,8 @@
 package com.xebisco.yield2d.engine;
 
-import java.io.Serial;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 
 public final class Axis implements Serializable {
-    @Serial
     private static final long serialVersionUID = -1981296784170855000L;
 
     public Key positive, altPositive, negative, altNegative;

@@ -23,6 +23,18 @@ public abstract class HandlerCollection implements Handler {
     }
 
     @Override
+    public void fixedUpdate(TimeSpan elapsed) {
+        callAllHandlers(handler -> handler.fixedUpdate(elapsed));
+    }
+
+    public void render() {
+        callAllHandlers(handler -> {
+            if (handler instanceof ApplicationHandler)
+                ((ApplicationHandler) handler).render();
+        });
+    }
+
+    @Override
     public void destroy() {
         callAllHandlers(Handler::destroy);
     }
@@ -39,11 +51,11 @@ public abstract class HandlerCollection implements Handler {
         T[] result = (T[]) Array.newInstance(handlerType, arraySize);
 
         int act = 0;
-        for(Handler curr : handlers) {
-            if(handlerType.isAssignableFrom(curr.getClass())) {
+        for (Handler curr : handlers) {
+            if (handlerType.isAssignableFrom(curr.getClass())) {
                 //noinspection unchecked
                 result[act] = (T) curr;
-                if(++act == arraySize) break;
+                if (++act == arraySize) break;
             }
         }
 

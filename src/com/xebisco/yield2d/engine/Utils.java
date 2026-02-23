@@ -8,13 +8,10 @@ import org.jbox2d.common.Vec2;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 public final class Utils {
-
-    public static final Random RANDOM = new Random();
-
     private Utils() {
     }
 
@@ -22,15 +19,38 @@ public final class Utils {
         return Math.max(min, Math.min(max, value));
     }
 
+    public static Vector2f offsetCenter(Vector2f size, Drawer.Center c) {
+        switch (c) {
+            case TOP:
+                return new Vector2f(0, -size.getY() / 2f);
+            case TOP_RIGHT:
+                return new Vector2f(-size.getX() / 2f, -size.getY() / 2f);
+            case TOP_LEFT:
+                return new Vector2f(size.getX() / 2f, -size.getY() / 2f);
+            case BOTTOM:
+                return new Vector2f(0, size.getY() / 2f);
+            case BOTTOM_RIGHT:
+                return new Vector2f(-size.getX() / 2f, size.getY() / 2f);
+            case BOTTOM_LEFT:
+                return new Vector2f(size.getX() / 2f, size.getY() / 2f);
+            case LEFT:
+                return new Vector2f(size.getX() / 2f, 0);
+            case RIGHT:
+                return new Vector2f(-size.getX() / 2f, 0);
+            case MIDDLE:
+                return new Vector2f(0, 0);
+        }
+        return null;
+    }
+
     public static float randomFloat(float min, float max) {
         if (min == max) return min;
-        return RANDOM.nextFloat(min, max);
+        return min + ThreadLocalRandom.current().nextFloat() * (max - min);
     }
 
     public static String readStringFromClasspath(String res) throws URISyntaxException, IOException {
-        if (!res.startsWith(File.separator)) res = File.separator + res;
-        InputStream in = Utils.class.getResourceAsStream(res);
-        try (in) {
+        if (!res.startsWith("/")) res = "/" + res;
+        try (InputStream in = Utils.class.getResourceAsStream(res)) {
             if (in == null) throw new NullPointerException("Could not find '" + res + "' resource.");
             try (InputStreamReader isr = new InputStreamReader(in);
                  BufferedReader reader = new BufferedReader(isr)) {
@@ -39,8 +59,20 @@ public final class Utils {
         }
     }
 
+    public static byte[] readAllBytes(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int nRead;
+        byte[] data = new byte[16384];
+
+        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+
+        return buffer.toByteArray();
+    }
+
     public static String readStringFromInputStream(InputStream inputStream) throws IOException {
-        return new String(inputStream.readAllBytes());
+        return new String(readAllBytes(inputStream));
     }
 
     public static Transform toB2Transform(Transform2f t, float ppm) {

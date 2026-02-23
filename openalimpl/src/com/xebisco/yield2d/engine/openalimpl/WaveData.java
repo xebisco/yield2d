@@ -31,6 +31,12 @@
  */
 package com.xebisco.yield2d.engine.openalimpl;
 
+import com.xebisco.yield2d.engine.Debug;
+import org.lwjgl.openal.AL10;
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,13 +45,6 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
-
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-
-import com.xebisco.yield2d.engine.Debug;
-import org.lwjgl.openal.AL10;
 
 /**
  *
@@ -122,8 +121,7 @@ public class WaveData {
 	 */
 	public static WaveData create(InputStream is) {
 		try {
-			return create(
-				AudioSystem.getAudioInputStream(is));
+            return create(AudioSystem.getAudioInputStream(new BufferedInputStream(is)));
 		} catch (Exception e) {
 			Debug.println("Unable to create from inputstream, " + e.getMessage());
 			return null;
